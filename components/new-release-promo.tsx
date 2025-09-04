@@ -2,11 +2,36 @@
 
 import { motion, useInView } from "framer-motion"
 import { Upload, ArrowRight } from "lucide-react"
-import { useRef } from "react"
+import { useRef, useState } from "react"
 
 export function NewReleasePromo() {
   const ref = useRef(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const isInView = useInView(ref, { once: true, amount: 0.3 })
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+
+  const handleFileUpload = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']
+      if (allowedTypes.includes(file.type)) {
+        setUploadedFile(file)
+        setIsUploading(true)
+        
+        setTimeout(() => {
+          setIsUploading(false)
+          alert(`File "${file.name}" uploaded successfully! 📄✅`)
+        }, 2000)
+      } else {
+        alert('Please upload a PDF, DOCX, or TXT file.')
+      }
+    }
+  }
 
   return (
     <section className="mt-12 w-full">
@@ -86,19 +111,47 @@ export function NewReleasePromo() {
                 transition={{ duration: 0.6, delay: 0.5 }}
                 className="flex items-center justify-center"
               >
-                <a href="/upload">
-                  <div className="group border-white/20 bg-white/10 backdrop-blur-sm flex h-[64px] cursor-pointer items-center gap-2 rounded-full border p-[11px] mt-10 hover:bg-white/20 transition-all duration-300">
+                {/* Hidden File Input */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept=".pdf,.docx,.txt"
+                  className="hidden"
+                />
+                
+                <div onClick={handleFileUpload}>
+                  <div className="group border-white/20 bg-white/10 backdrop-blur-sm flex h-[64px] cursor-pointer items-center gap-2 rounded-full border p-[11px] mt-10 hover:bg-white/20 transition-all duration-300 hover:scale-105">
                     <div className="border-white/20 bg-white flex h-[43px] items-center justify-center rounded-full border">
                       <p className="mr-3 ml-3 flex items-center justify-center gap-2 font-medium tracking-tight text-primary">
-                        <Upload className="w-5 h-5" />
-                        Try Legal Lens Free
+                        {isUploading ? (
+                          <>
+                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                              <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Uploading...
+                          </>
+                        ) : uploadedFile ? (
+                          <>
+                            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
+                            </svg>
+                            File Uploaded!
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-5 h-5" />
+                            Try Legal Lens Free
+                          </>
+                        )}
                       </p>
                     </div>
                     <div className="border-white/30 text-white/70 flex size-[26px] items-center justify-center rounded-full border-2 transition-all ease-in-out group-hover:ml-2 group-hover:text-white">
                       <ArrowRight className="w-4 h-4 transition-all ease-in-out group-hover:rotate-45" />
                     </div>
                   </div>
-                </a>
+                </div>
               </motion.div>
             </div>
 

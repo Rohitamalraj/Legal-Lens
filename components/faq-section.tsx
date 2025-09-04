@@ -35,7 +35,7 @@ export function FAQSection() {
   ]
 
   return (
-    <section id="faq" className="relative overflow-hidden pb-120 pt-24">
+    <section id="faq" className="relative overflow-hidden pb-16 pt-24">
       {/* Background blur effects */}
       <div className="bg-primary/20 absolute top-1/2 -right-20 z-[-1] h-64 w-64 rounded-full opacity-80 blur-3xl"></div>
       <div className="bg-primary/20 absolute top-1/2 -left-20 z-[-1] h-64 w-64 rounded-full opacity-80 blur-3xl"></div>
@@ -71,7 +71,7 @@ export function FAQSection() {
           {faqs.map((faq, index) => (
             <motion.div
               key={index}
-              className="from-secondary/40 to-secondary/10 rounded-2xl border border-white/10 bg-gradient-to-b p-6 shadow-[0px_2px_0px_0px_rgba(255,255,255,0.1)_inset] transition-all duration-300 hover:border-white/20 cursor-pointer"
+              className="bg-gray-900/40 backdrop-blur-md rounded-2xl border border-gray-700/30 p-6 shadow-lg transition-all duration-300 hover:border-gray-600/50 hover:bg-gray-900/50 cursor-pointer"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -90,7 +90,7 @@ export function FAQSection() {
               {...(index === faqs.length - 1 && { "data-faq": faq.question })}
             >
               <div className="flex items-start justify-between">
-                <h3 className="m-0 font-medium pr-4">{faq.question}</h3>
+                <h3 className="m-0 font-medium pr-4 text-white">{faq.question}</h3>
                 <motion.div
                   animate={{ rotate: openItems.includes(index) ? 180 : 0 }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
@@ -106,7 +106,7 @@ export function FAQSection() {
               <AnimatePresence>
                 {openItems.includes(index) && (
                   <motion.div
-                    className="mt-4 text-muted-foreground leading-relaxed overflow-hidden"
+                    className="mt-4 text-gray-300 leading-relaxed overflow-hidden"
                     initial={{ opacity: 0, height: 0, marginTop: 0 }}
                     animate={{ opacity: 1, height: "auto", marginTop: 16 }}
                     exit={{ opacity: 0, height: 0, marginTop: 0 }}

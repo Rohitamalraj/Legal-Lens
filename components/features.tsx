@@ -97,22 +97,22 @@ export default function Features() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="group relative"
               >
-                <div className="border-secondary/40 text-card-foreground relative flex flex-col overflow-hidden rounded-xl border-2 p-8 shadow-xl transition-all ease-in-out hover:scale-105 hover:border-primary/50 hover:shadow-2xl bg-card/50 backdrop-blur-sm h-full">
+                <div className="border-gray-700/30 text-white relative flex flex-col overflow-hidden rounded-xl border-2 p-8 shadow-xl transition-all ease-in-out hover:scale-105 hover:border-gray-600/50 hover:shadow-2xl bg-gray-900/40 backdrop-blur-md h-full">
                   {/* Icon */}
                   <div className={`w-16 h-16 rounded-full ${feature.bgColor} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                     <feature.icon className={`w-8 h-8 ${feature.color}`} />
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-2xl font-semibold tracking-tight mb-4 text-foreground">
+                  <h3 className="text-2xl font-semibold tracking-tight mb-4 text-white">
                     {feature.title}
                   </h3>
-                  <p className="text-muted-foreground leading-relaxed">
+                  <p className="text-gray-300 leading-relaxed">
                     {feature.description}
                   </p>
 
                   {/* Hover Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
                 </div>
               </motion.div>
             ))}
@@ -128,22 +128,22 @@ export default function Features() {
                 transition={{ duration: 0.5, delay: (index + 2) * 0.1 }}
                 className="group relative"
               >
-                <div className="border-secondary/40 text-card-foreground relative flex flex-col overflow-hidden rounded-xl border-2 p-8 shadow-xl transition-all ease-in-out hover:scale-105 hover:border-primary/50 hover:shadow-2xl bg-card/50 backdrop-blur-sm h-full">
+                <div className="border-gray-700/30 text-white relative flex flex-col overflow-hidden rounded-xl border-2 p-8 shadow-xl transition-all ease-in-out hover:scale-105 hover:border-gray-600/50 hover:shadow-2xl bg-gray-900/40 backdrop-blur-md h-full">
                   {/* Icon */}
                   <div className={`w-16 h-16 rounded-full ${feature.bgColor} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                     <feature.icon className={`w-8 h-8 ${feature.color}`} />
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-2xl font-semibold tracking-tight mb-4 text-foreground">
+                  <h3 className="text-2xl font-semibold tracking-tight mb-4 text-white">
                     {feature.title}
                   </h3>
-                  <p className="text-muted-foreground leading-relaxed">
+                  <p className="text-gray-300 leading-relaxed">
                     {feature.description}
                   </p>
 
                   {/* Hover Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
                 </div>
               </motion.div>
             ))}
@@ -157,18 +157,18 @@ export default function Features() {
           transition={{ duration: 0.5, delay: 0.8 }}
           className="mt-16 w-full max-w-4xl mx-auto"
         >
-          <div className="border-secondary/40 text-card-foreground relative overflow-hidden rounded-xl border-2 p-8 shadow-xl bg-card/50 backdrop-blur-sm">
+          <div className="border-gray-700/30 text-white relative overflow-hidden rounded-xl border-2 p-8 shadow-xl bg-gray-900/40 backdrop-blur-md">
             <div className="text-center mb-8">
-              <h3 className="text-3xl font-semibold tracking-tight mb-4">
+              <h3 className="text-3xl font-semibold tracking-tight mb-4 text-white">
                 See Legal Lens in Action
               </h3>
-              <p className="text-muted-foreground">
+              <p className="text-gray-300">
                 Upload a legal document and watch our AI break it down into simple, understandable language
               </p>
             </div>
 
             {/* Mock Interface */}
-            <div className="bg-background/80 rounded-lg p-6 border border-border">
+            <div className="bg-gray-800/60 rounded-lg p-6 border border-gray-600/30 backdrop-blur-sm">
               <div className="flex items-center gap-4 mb-6">
                 <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-primary">
                   <FileText className="w-4 h-4" />

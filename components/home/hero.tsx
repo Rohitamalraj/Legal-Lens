@@ -1,12 +1,39 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Search } from "lucide-react"
 
 export default function Hero() {
   const [mounted, setMounted] = useState(false)
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileUpload = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      // Check file type
+      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']
+      if (allowedTypes.includes(file.type)) {
+        setUploadedFile(file)
+        setIsUploading(true)
+        
+        // Simulate upload process
+        setTimeout(() => {
+          setIsUploading(false)
+          alert(`File "${file.name}" uploaded successfully! 📄✅`)
+        }, 2000)
+      } else {
+        alert('Please upload a PDF, DOCX, or TXT file.')
+      }
+    }
+  }
 
   useEffect(() => {
     setMounted(true)
@@ -63,27 +90,58 @@ export default function Hero() {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="flex flex-col sm:flex-row items-center gap-6 justify-center"
             >
+              {/* Hidden File Input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".pdf,.docx,.txt"
+                className="hidden"
+              />
+              
               {/* Upload Document Button */}
-              <div className="group cursor-pointer border border-border bg-card gap-2 h-[60px] flex items-center p-[10px] rounded-full">
+              <div 
+                className="group cursor-pointer border border-border bg-card gap-2 h-[60px] flex items-center p-[10px] rounded-full hover:scale-105 transition-transform duration-200"
+                onClick={handleFileUpload}
+              >
                 <div className="border border-border bg-primary h-[40px] rounded-full flex items-center justify-center text-primary-foreground">
                   <p className="font-medium tracking-tight mr-3 ml-3 flex items-center gap-2 justify-center text-base">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="lucide lucide-upload"
-                    >
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                      <polyline points="7,10 12,5 17,10"></polyline>
-                      <line x1="12" x2="12" y1="5" y2="15"></line>
-                    </svg>
-                    Upload Document
+                    {isUploading ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                          <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Uploading...
+                      </>
+                    ) : uploadedFile ? (
+                      <>
+                        <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
+                        </svg>
+                        File Uploaded
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="lucide lucide-upload"
+                        >
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="7,10 12,5 17,10"></polyline>
+                          <line x1="12" x2="12" y1="5" y2="15"></line>
+                        </svg>
+                        Upload Document
+                      </>
+                    )}
                   </p>
                 </div>
                 <div className="text-muted-foreground group-hover:ml-4 ease-in-out transition-all size-[24px] flex items-center justify-center rounded-full border-2 border-border">

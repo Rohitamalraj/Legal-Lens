@@ -80,12 +80,12 @@ export function PricingSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-8 mb-12"
+              className="bg-gray-900/40 backdrop-blur-md border border-gray-700/30 rounded-xl p-8 mb-12"
             >
-              <blockquote className="text-lg italic text-foreground leading-relaxed">
+              <blockquote className="text-lg italic text-white leading-relaxed">
                 "Legal documents shouldn't be a mystery. Every person deserves to understand what they're agreeing to, without needing a law degree. That's why we created Legal Lens — to democratize legal understanding through the power of AI."
               </blockquote>
-              <footer className="mt-6 text-muted-foreground">
+              <footer className="mt-6 text-gray-300">
                 — The Legal Lens Team
               </footer>
             </motion.div>
@@ -106,7 +106,7 @@ export function PricingSection() {
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.6, delay: 0.1 * index }}
               whileHover={{ y: -5 }}
-              className="group relative rounded-xl p-6 backdrop-blur-sm border border-border/50 hover:border-primary/50 transition-all duration-300 bg-card/30"
+              className="group relative rounded-xl p-6 backdrop-blur-md border border-gray-700/30 hover:border-gray-600/50 transition-all duration-300 bg-gray-900/40"
             >
               <div className={`w-12 h-12 rounded-lg ${value.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
                 <value.icon className={`w-6 h-6 ${value.color}`} />
@@ -131,7 +131,7 @@ export function PricingSection() {
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
           transition={{ duration: 0.6, delay: 0.5 }}
-          className="bg-gradient-to-r from-primary/10 via-purple-500/10 to-primary/10 rounded-2xl p-12 text-center"
+          className="bg-gray-900/30 backdrop-blur-sm border border-gray-700/20 rounded-2xl p-12 text-center"
         >
           <div className="grid md:grid-cols-3 gap-8">
             <div>

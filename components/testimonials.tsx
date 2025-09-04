@@ -86,12 +86,12 @@ export function TestimonialsSection() {
                 <div className="relative z-10 text-center">
                   {/* Step Number Above */}
                   <div className="mb-6">
-                    <div className="w-12 h-12 mx-auto bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-lg mb-4">
+                    <div className="w-16 h-16 mx-auto bg-gradient-to-r from-primary to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl mb-4 shadow-lg border-2 border-white/20">
                       {step.step}
                     </div>
                     
                     {/* Icon */}
-                    <div className={`w-24 h-24 mx-auto rounded-full ${step.bgColor} border-2 ${step.borderColor} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                    <div className={`w-24 h-24 mx-auto rounded-full ${step.bgColor} border-2 ${step.borderColor} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md`}>
                       <step.icon className={`w-10 h-10 ${step.color}`} />
                     </div>
                   </div>
