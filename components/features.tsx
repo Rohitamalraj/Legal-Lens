@@ -16,9 +16,9 @@ import {
   GitCompare
 } from "lucide-react"
 
-export default function Features() {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, amount: 0.3 })
+export default function LegalLensFeatures() {
+  const featuresContainerRef = useRef(null)
+  const featuresInView = useInView(featuresContainerRef, { once: true, amount: 0.3 })
 
   const features = [
     {
@@ -64,9 +64,9 @@ export default function Features() {
       <div className="via-primary/50 absolute top-0 left-1/2 h-px w-3/5 -translate-x-1/2 bg-gradient-to-r from-transparent to-transparent transition-all ease-in-out"></div>
       
       <motion.div
-        ref={ref}
+        ref={featuresContainerRef}
         initial={{ opacity: 0, y: 50 }}
-        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+        animate={featuresInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
         transition={{ duration: 0.5, delay: 0 }}
         className="container mx-auto flex flex-col items-center gap-6 sm:gap-12"
       >
@@ -93,7 +93,7 @@ export default function Features() {
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 50 }}
-                animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+                animate={featuresInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="group relative"
               >
@@ -124,7 +124,7 @@ export default function Features() {
               <motion.div
                 key={index + 2}
                 initial={{ opacity: 0, y: 50 }}
-                animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+                animate={featuresInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
                 transition={{ duration: 0.5, delay: (index + 2) * 0.1 }}
                 className="group relative"
               >
@@ -153,7 +153,7 @@ export default function Features() {
         {/* Interactive Demo Section */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+          animate={featuresInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
           transition={{ duration: 0.5, delay: 0.8 }}
           className="mt-16 w-full max-w-4xl mx-auto"
         >

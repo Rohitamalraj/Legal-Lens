@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Renderer, Camera, Geometry, Program, Mesh } from 'ogl';
 
-interface ParticlesProps {
+interface WebGLParticleSystemProps {
   particleCount?: number;
   particleSpread?: number;
   speed?: number;
@@ -16,21 +16,21 @@ interface ParticlesProps {
   className?: string;
 }
 
-const defaultColors: string[] = ['#ffffff', '#ffffff', '#ffffff'];
+const fallbackColorPalette: string[] = ['#ffffff', '#ffffff', '#ffffff'];
 
-const hexToRgb = (hex: string): [number, number, number] => {
-  hex = hex.replace(/^#/, '');
-  if (hex.length === 3) {
-    hex = hex
+const convertHexToNormalizedRgb = (hexColor: string): [number, number, number] => {
+  hexColor = hexColor.replace(/^#/, '');
+  if (hexColor.length === 3) {
+    hexColor = hexColor
       .split('')
-      .map(c => c + c)
+      .map(char => char + char)
       .join('');
   }
-  const int = parseInt(hex, 16);
-  const r = ((int >> 16) & 255) / 255;
-  const g = ((int >> 8) & 255) / 255;
-  const b = (int & 255) / 255;
-  return [r, g, b];
+  const hexValue = parseInt(hexColor, 16);
+  const redChannel = ((hexValue >> 16) & 255) / 255;
+  const greenChannel = ((hexValue >> 8) & 255) / 255;
+  const blueChannel = (hexValue & 255) / 255;
+  return [redChannel, greenChannel, blueChannel];
 };
 
 const vertex = /* glsl */ `
@@ -92,7 +92,7 @@ const fragment = /* glsl */ `
   }
 `;
 
-const Particles: React.FC<ParticlesProps> = ({
+const WebGLParticleSystem: React.FC<WebGLParticleSystemProps> = ({
   particleCount = 200,
   particleSpread = 10,
   speed = 0.1,
@@ -145,7 +145,7 @@ const Particles: React.FC<ParticlesProps> = ({
     const positions = new Float32Array(count * 3);
     const randoms = new Float32Array(count * 4);
     const colors = new Float32Array(count * 3);
-    const palette = particleColors && particleColors.length > 0 ? particleColors : defaultColors;
+    const colorPalette = particleColors && particleColors.length > 0 ? particleColors : fallbackColorPalette;
 
     for (let i = 0; i < count; i++) {
       let x: number, y: number, z: number, len: number;
@@ -158,8 +158,8 @@ const Particles: React.FC<ParticlesProps> = ({
       const r = Math.cbrt(Math.random());
       positions.set([x * r, y * r, z * r], i * 3);
       randoms.set([Math.random(), Math.random(), Math.random(), Math.random()], i * 4);
-      const col = hexToRgb(palette[Math.floor(Math.random() * palette.length)]);
-      colors.set(col, i * 3);
+      const particleColor = convertHexToNormalizedRgb(colorPalette[Math.floor(Math.random() * colorPalette.length)]);
+      colors.set(particleColor, i * 3);
     }
 
     const geometry = new Geometry(gl, {
@@ -241,4 +241,4 @@ const Particles: React.FC<ParticlesProps> = ({
   return <div ref={containerRef} className={`relative w-full h-full ${className}`} />;
 };
 
-export default Particles;
+export default WebGLParticleSystem;

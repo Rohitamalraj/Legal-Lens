@@ -5,29 +5,29 @@ import { useState, useEffect, useRef } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Search } from "lucide-react"
 
-export default function Hero() {
-  const [mounted, setMounted] = useState(false)
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+export default function LegalLensHeroSection() {
+  const [componentMounted, setComponentMounted] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploadInProgress, setUploadInProgress] = useState(false)
+  const fileInputReference = useRef<HTMLInputElement>(null)
 
-  const handleFileUpload = () => {
-    fileInputRef.current?.click()
+  const initiateFileUpload = () => {
+    fileInputReference.current?.click()
   }
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      // Check file type
-      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']
-      if (allowedTypes.includes(file.type)) {
-        setUploadedFile(file)
-        setIsUploading(true)
+  const processFileSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedDocument = event.target.files?.[0]
+    if (selectedDocument) {
+      // Validate file type
+      const allowedFileTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']
+      if (allowedFileTypes.includes(selectedDocument.type)) {
+        setSelectedFile(selectedDocument)
+        setUploadInProgress(true)
         
         // Simulate upload process
         setTimeout(() => {
-          setIsUploading(false)
-          alert(`File "${file.name}" uploaded successfully! 📄✅`)
+          setUploadInProgress(false)
+          alert(`File "${selectedDocument.name}" uploaded successfully! 📄✅`)
         }, 2000)
       } else {
         alert('Please upload a PDF, DOCX, or TXT file.')
@@ -36,10 +36,10 @@ export default function Hero() {
   }
 
   useEffect(() => {
-    setMounted(true)
+    setComponentMounted(true)
   }, [])
 
-  if (!mounted) {
+  if (!componentMounted) {
     return null
   }
 
@@ -93,8 +93,8 @@ export default function Hero() {
               {/* Hidden File Input */}
               <input
                 type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
+                ref={fileInputReference}
+                onChange={processFileSelection}
                 accept=".pdf,.docx,.txt"
                 className="hidden"
               />
@@ -102,11 +102,11 @@ export default function Hero() {
               {/* Upload Document Button */}
               <div 
                 className="group cursor-pointer border border-border bg-card gap-2 h-[60px] flex items-center p-[10px] rounded-full hover:scale-105 transition-transform duration-200"
-                onClick={handleFileUpload}
+                onClick={initiateFileUpload}
               >
                 <div className="border border-border bg-primary h-[40px] rounded-full flex items-center justify-center text-primary-foreground">
                   <p className="font-medium tracking-tight mr-3 ml-3 flex items-center gap-2 justify-center text-base">
-                    {isUploading ? (
+                    {uploadInProgress ? (
                       <>
                         <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
@@ -114,7 +114,7 @@ export default function Hero() {
                         </svg>
                         Uploading...
                       </>
-                    ) : uploadedFile ? (
+                    ) : selectedFile ? (
                       <>
                         <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>

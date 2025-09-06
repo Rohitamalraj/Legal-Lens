@@ -1,6 +1,7 @@
 {
-  "name": "my-v0-project",
+  "name": "legal-lens-webapp",
   "version": "0.1.0",
+  "description": "Legal Lens - AI-powered legal document analysis platform with advanced WebGL visualization",
   "private": true,
   "scripts": {
     "build": "next build",

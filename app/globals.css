@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Legal Lens - Custom Design System */
+/* Advanced color palette optimized for legal document processing interfaces */
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
