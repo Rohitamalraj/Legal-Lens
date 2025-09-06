@@ -114,7 +114,20 @@ export default function AnalysePage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground">
+    <div className="min-h-screen w-full bg-background text-foreground relative">
+      {/* Background Elements */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1, delay: 0.5 }}
+        className="absolute inset-0 -z-10"
+      >
+        {/* Purple gradient orbs */}
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-violet-600/5 rounded-full blur-3xl"></div>
+        <div className="absolute top-3/4 left-1/3 w-64 h-64 bg-purple-500/5 rounded-full blur-2xl"></div>
+      </motion.div>
       {/* Header */}
       <header className="sticky top-4 z-50 mx-4 rounded-full bg-background/70 backdrop-blur-xl border border-border shadow-2xl">
         <div className="flex items-center justify-between px-8 py-4">
@@ -181,10 +194,10 @@ export default function AnalysePage() {
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Legal Document <span className="text-blue-600">Analysis</span>
+              Legal Document <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Analysis</span>
             </h1>
             <p className="text-xl text-muted-foreground">
-              Upload your legal document and understand it in <span className="text-blue-600 font-semibold">plain English</span> - no more legal jargon!
+              Upload your legal document and understand it in <span className="text-violet-600 font-semibold">plain English</span> - no more legal jargon!
             </p>
           </motion.div>
 
@@ -192,7 +205,7 @@ export default function AnalysePage() {
           {!analysisComplete && (
             <motion.div
               className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors mb-8 ${
-                dragOver ? 'border-blue-400 bg-blue-50/5' : 'border-border bg-card'
+                dragOver ? 'border-violet-400 bg-violet-50/5' : 'border-border bg-card'
               }`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -213,7 +226,7 @@ export default function AnalysePage() {
               <div className="space-y-4">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mr-4"
+                  className="px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors mr-4"
                 >
                   Choose File
                 </button>
@@ -248,8 +261,8 @@ export default function AnalysePage() {
               {/* Plain English Summary */}
               <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                  <FileText className="h-6 w-6 text-blue-600" />
-                  <span className="text-blue-600">🧠 Legal Lens Summary (Plain English)</span>
+                  <FileText className="h-6 w-6 text-violet-600" />
+                  <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">🧠 Legal Lens Summary (Plain English)</span>
                 </h2>
                 <div className="space-y-4">
                   {mockAnalysis.plainEnglishSummary.map((item, index) => (
@@ -264,8 +277,8 @@ export default function AnalysePage() {
               {/* Risk Radar */}
               <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                  <FileText className="h-6 w-6 text-blue-600" />
-                  <span className="text-blue-600">⚠️ Risk Radar (Highlights)</span>
+                  <FileText className="h-6 w-6 text-violet-600" />
+                  <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">⚠️ Risk Radar (Highlights)</span>
                 </h2>
                 <div className="space-y-4">
                   {mockAnalysis.riskRadar.map((risk, index) => (
@@ -281,8 +294,8 @@ export default function AnalysePage() {
               <div className="bg-card backdrop-blur-sm rounded-lg border border-border">
                 <div className="p-6 border-b border-border">
                   <h2 className="text-2xl font-bold flex items-center gap-3">
-                    <MessageSquare className="h-6 w-6 text-blue-600" />
-                    <span className="text-blue-600">💬 Ask Questions About Your Document</span>
+                    <MessageSquare className="h-6 w-6 text-violet-600" />
+                    <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">💬 Ask Questions About Your Document</span>
                   </h2>
                   <p className="text-muted-foreground mt-2">Ask me anything about your legal document and I'll explain it in simple terms</p>
                 </div>
@@ -312,11 +325,11 @@ export default function AnalysePage() {
                         {/* Avatar */}
                         <div className="flex-shrink-0">
                           {msg.role === 'user' ? (
-                            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                            <div className="w-8 h-8 bg-violet-600 rounded-full flex items-center justify-center">
                               <User className="w-4 h-4 text-white" />
                             </div>
                           ) : (
-                            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                            <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
                               <Bot className="w-4 h-4 text-white" />
                             </div>
                           )}
@@ -343,12 +356,12 @@ export default function AnalysePage() {
                         onChange={(e) => setCurrentMessage(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                         placeholder="Ask a question about your document..."
-                        className="flex-1 px-4 py-3 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        className="flex-1 px-4 py-3 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
                       />
                       <button
                         onClick={handleSendMessage}
                         disabled={!currentMessage.trim()}
-                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Send className="h-4 w-4" />
                       </button>
