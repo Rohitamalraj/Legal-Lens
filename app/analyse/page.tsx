@@ -1,18 +1,23 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Upload, FileText, MessageSquare, Send, User, Bot } from 'lucide-react'
+import { apiService, type DocumentAnalysis } from '@/lib/api'
+import { debugDocumentData } from '@/lib/debug-utils'
 
 export default function AnalysePage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisComplete, setAnalysisComplete] = useState(false)
+  const [documentData, setDocumentData] = useState<DocumentAnalysis | null>(null)
   const [chatMessages, setChatMessages] = useState<{role: 'user' | 'assistant', message: string}[]>([])
   const [currentMessage, setCurrentMessage] = useState('')
   const [dragOver, setDragOver] = useState(false)
   const [headerScrollState, setHeaderScrollState] = useState(false)
   const [mobileNavVisible, setMobileNavVisible] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [isSendingMessage, setIsSendingMessage] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const navigateToSection = (sectionId: string) => {
@@ -26,41 +31,80 @@ export default function AnalysePage() {
     }, 100)
   }
 
-  // Mock analysis data
-  const mockAnalysis = {
-    originalText: "The Tenant agrees to pay the Landlord a monthly rent of ₹15,000, due on or before the 5th day of each month. A late fee of ₹500 shall be charged if payment is delayed beyond the due date. The Tenant is responsible for utility bills including electricity, water, and internet. The Lease term shall begin on 1st September 2025 and terminate on 31st August 2026. Either party may terminate this agreement with a 60-day written notice.",
-    plainEnglishSummary: [
-      { emoji: "🏠", text: "Rent: ₹15,000 per month, due before the 5th." },
-      { emoji: "⏰", text: "Late Fee: ₹500 if you miss the deadline." },
-      { emoji: "💡", text: "Utilities: Tenant pays electricity, water, internet." },
-      { emoji: "📅", text: "Duration: Sept 1, 2025 → Aug 31, 2026." },
-      { emoji: "📜", text: "Termination: Either side can end it with 60 days' notice." }
-    ],
-    riskRadar: [
-      { level: 'high', emoji: '🔴', text: 'Late fee applies if you pay after the 5th.' },
-      { level: 'medium', emoji: '🟡', text: 'You must pay all utility bills — make sure this is affordable.' },
-      { level: 'low', emoji: '🟢', text: 'Standard 1-year lease with 60-day exit clause (fair).' }
-    ]
-  }
-
-  const mockQAResponses: {[key: string]: string} = {
-    "what happens if i don't pay rent on time": "You'll be charged ₹500 as a late fee for payments after the 5th of each month.",
-    "when does the lease end": "The lease terminates on 31st August 2026.",
-    "who pays for utilities": "As the tenant, you are responsible for paying electricity, water, and internet bills.",
-    "how can i terminate the lease": "Either you or the landlord can terminate the agreement by providing 60 days' written notice.",
-    "what is the monthly rent": "The monthly rent is ₹15,000, which must be paid on or before the 5th of each month."
-  }
+  // Check for existing document on page load
+  useEffect(() => {
+    const checkExistingDocument = async () => {
+      try {
+        if (typeof window === 'undefined') return
+        
+        const documentId = localStorage.getItem('currentDocumentId')
+        if (documentId) {
+          const result = await apiService.getDocument(documentId)
+          if (result.success && result.data) {
+            setDocumentData(result.data)
+            setAnalysisComplete(true)
+          } else {
+            localStorage.removeItem('currentDocumentId')
+          }
+        }
+      } catch (error) {
+        console.error('Error checking existing document:', error)
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('currentDocumentId')
+        }
+      }
+    }
+    
+    checkExistingDocument()
+  }, [])
 
   const handleFileUpload = async () => {
     if (!uploadedFile) return
     
     setIsAnalyzing(true)
+    setUploadError(null)
     
-    // Simulate analysis delay
-    await new Promise(resolve => setTimeout(resolve, 3000))
-    
-    setIsAnalyzing(false)
-    setAnalysisComplete(true)
+    try {
+      // First validate the document
+      const validationResult = await apiService.validateDocument(uploadedFile)
+      
+      if (!validationResult.success) {
+        throw new Error(validationResult.error || 'Document validation failed')
+      }
+      
+      if (!validationResult.data?.isValid) {
+        throw new Error('This file is not a valid document')
+      }
+      
+      if (!validationResult.data?.isLegalDocument) {
+        throw new Error('This document does not appear to be a legal document')
+      }
+      
+      // Upload and process the document
+      const uploadResult = await apiService.uploadDocument(uploadedFile)
+      
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Document upload failed')
+      }
+      
+        if (uploadResult.data) {
+          console.log('DEBUG: Setting document data after upload')
+          debugDocumentData(uploadResult.data)
+          setDocumentData(uploadResult.data)
+          setAnalysisComplete(true)
+          localStorage.setItem('currentDocumentId', uploadResult.data.id)
+          
+          // Dispatch event for other components
+          const event = new CustomEvent('documentUploaded', {
+            detail: uploadResult.data
+          })
+          window.dispatchEvent(event)
+        }    } catch (error) {
+      console.error('Upload error:', error)
+      setUploadError(error instanceof Error ? error.message : 'Upload failed')
+    } finally {
+      setIsAnalyzing(false)
+    }
   }
 
   const handleFileSelect = (file: File) => {
@@ -95,22 +139,50 @@ export default function AnalysePage() {
     }
   }
 
-  const handleSendMessage = () => {
-    if (!currentMessage.trim()) return
-
-    const userMessage = currentMessage.toLowerCase().trim()
-    setChatMessages(prev => [...prev, { role: 'user', message: currentMessage }])
-
-    // Find matching response
-    const response = Object.entries(mockQAResponses).find(([question]) => 
-      userMessage.includes(question) || question.includes(userMessage)
-    )?.[1] || "I can help you understand this document better. Try asking about rent, utilities, lease duration, or termination conditions."
-
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, { role: 'assistant', message: response }])
-    }, 1000)
-
+  const handleSendMessage = async () => {
+    if (!currentMessage.trim() || isSendingMessage) return
+    
+    if (!documentData) {
+      const userMessage = { role: 'user' as const, message: currentMessage }
+      const errorMessage = { role: 'assistant' as const, message: 'Please upload and analyze a document first before asking questions.' }
+      setChatMessages(prev => [...prev, userMessage, errorMessage])
+      setCurrentMessage('')
+      return
+    }
+    
+    const userMessage = { role: 'user' as const, message: currentMessage }
+    setChatMessages(prev => [...prev, userMessage])
+    
+    setIsSendingMessage(true)
+    const query = currentMessage
     setCurrentMessage('')
+    
+    try {
+      const response = await apiService.sendChatMessage(documentData.id, query)
+      
+      if (response.success && response.data) {
+        const aiMessage = { 
+          role: 'assistant' as const, 
+          message: response.data.response 
+        }
+        setChatMessages(prev => [...prev, aiMessage])
+      } else {
+        const errorMessage = { 
+          role: 'assistant' as const, 
+          message: `Sorry, I encountered an error: ${response.error || 'Unknown error'}. Please try again.`
+        }
+        setChatMessages(prev => [...prev, errorMessage])
+      }
+    } catch (error) {
+      console.error('Chat error:', error)
+      const errorMessage = { 
+        role: 'assistant' as const, 
+        message: 'Sorry, there was a problem processing your request. Please try again.'
+      }
+      setChatMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsSendingMessage(false)
+    }
   }
 
   return (
@@ -266,6 +338,15 @@ export default function AnalysePage() {
                   </button>
                 )}
               </div>
+              
+              {/* Error Display */}
+              {uploadError && (
+                <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                  <p className="font-semibold">Upload Error:</p>
+                  <p>{uploadError}</p>
+                </div>
+              )}
+              
               <input
                 type="file"
                 ref={fileInputRef}
@@ -288,33 +369,196 @@ export default function AnalysePage() {
               <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
                   <FileText className="h-6 w-6 text-violet-600" />
-                  <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">🧠 Legal Lens Summary (Plain English)</span>
+                  <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">🧠 Legal Lens Summary</span>
                 </h2>
                 <div className="space-y-4">
-                  {mockAnalysis.plainEnglishSummary.map((item, index) => (
-                    <div key={index} className="flex items-start gap-3 py-3">
-                      <span className="text-xl">{item.emoji}</span>
-                      <p className="text-foreground text-lg">{item.text}</p>
+                  {documentData?.analysis.summary && (
+                    <div className="flex items-start gap-3 py-3">
+                      <span className="text-xl">📄</span>
+                      <p className="text-foreground text-lg">{documentData.analysis.summary}</p>
                     </div>
-                  ))}
+                  )}
+                  {documentData?.analysis?.keyTerms && Array.isArray(documentData.analysis.keyTerms) && documentData.analysis.keyTerms.length > 0 && (
+                    <div className="flex items-start gap-3 py-3">
+                      <span className="text-xl">🔑</span>
+                      <div className="text-foreground text-lg">
+                        <p className="font-semibold mb-2">Key Terms:</p>
+                        <div className="space-y-3">
+                          {documentData.analysis.keyTerms.map((term: any, index: number) => (
+                            <div key={index} className="bg-blue-50 border border-blue-200 rounded p-3">
+                              {typeof term === 'string' ? (
+                                <p className="text-blue-800">{term}</p>
+                              ) : (
+                                <div>
+                                  {term.term && (
+                                    <h5 className="font-semibold text-blue-900 mb-1">{term.term}</h5>
+                                  )}
+                                  <p className="text-blue-800 text-sm">{term.definition}</p>
+                                  {term.importance && (
+                                    <span className={`inline-block mt-1 px-2 py-1 text-xs rounded ${
+                                      term.importance === 'HIGH' ? 'bg-blue-200 text-blue-900' :
+                                      term.importance === 'MEDIUM' ? 'bg-blue-100 text-blue-800' :
+                                      'bg-gray-100 text-gray-800'
+                                    }`}>
+                                      {term.importance}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Risk Radar */}
+              {/* Risk Analysis */}
               <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
                   <FileText className="h-6 w-6 text-violet-600" />
-                  <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">⚠️ Risk Radar (Highlights)</span>
+                  <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">⚠️ Risk Analysis</span>
                 </h2>
                 <div className="space-y-4">
-                  {mockAnalysis.riskRadar.map((risk, index) => (
-                    <div key={index} className="flex items-start gap-3 py-3">
-                      <span className="text-xl">{risk.emoji}</span>
-                      <p className="text-foreground text-lg">{risk.text}</p>
+                  {documentData?.analysis?.riskScore !== undefined && (
+                    <div className="flex items-start gap-3 py-3">
+                      <span className="text-xl">📊</span>
+                      <div className="text-foreground text-lg">
+                        <p className="font-semibold">Risk Score: {documentData.analysis.riskScore}/100</p>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                          <div 
+                            className={`h-2.5 rounded-full ${
+                              documentData.analysis.riskScore > 70 ? 'bg-red-600' :
+                              documentData.analysis.riskScore > 40 ? 'bg-yellow-500' :
+                              'bg-green-600'
+                            }`}
+                            style={{ width: `${documentData.analysis.riskScore}%` }}
+                          ></div>
+                        </div>
+                      </div>
                     </div>
-                  ))}
+                  )}
+                  {documentData?.analysis?.keyRisks && Array.isArray(documentData.analysis.keyRisks) && documentData.analysis.keyRisks.length > 0 && (
+                    <div className="flex items-start gap-3 py-3">
+                      <span className="text-xl">🔴</span>
+                      <div className="text-foreground text-lg">
+                        <p className="font-semibold mb-2">Key Risks:</p>
+                        <div className="space-y-3">
+                          {documentData.analysis.keyRisks.map((risk: any, index: number) => (
+                            <div key={index} className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
+                              {typeof risk === 'string' ? (
+                                <p className="text-red-800">{risk}</p>
+                              ) : (
+                                <div>
+                                  {risk.category && (
+                                    <h4 className="font-semibold text-red-900 mb-1">{risk.category}</h4>
+                                  )}
+                                  <p className="text-red-800 text-sm mb-2">{risk.description}</p>
+                                  {risk.severity && (
+                                    <span className={`inline-block px-2 py-1 text-xs rounded ${
+                                      risk.severity === 'CRITICAL' ? 'bg-red-200 text-red-900' :
+                                      risk.severity === 'HIGH' ? 'bg-orange-200 text-orange-900' :
+                                      'bg-yellow-200 text-yellow-900'
+                                    }`}>
+                                      {risk.severity}
+                                    </span>
+                                  )}
+                                  {risk.recommendation && (
+                                    <p className="text-red-700 text-sm mt-2 italic">💡 {risk.recommendation}</p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {documentData?.analysis?.recommendations && Array.isArray(documentData.analysis.recommendations) && documentData.analysis.recommendations.length > 0 && (
+                    <div className="flex items-start gap-3 py-3">
+                      <span className="text-xl">💡</span>
+                      <div className="text-foreground text-lg">
+                        <p className="font-semibold mb-2">Recommendations:</p>
+                        <ul className="list-disc list-inside space-y-1">
+                          {documentData.analysis.recommendations.map((rec: any, index: number) => (
+                            <li key={index}>
+                              {typeof rec === 'string' ? rec : rec.description || rec.recommendation || JSON.stringify(rec)}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Obligations and Rights */}
+              {((documentData?.analysis?.obligations && Array.isArray(documentData.analysis.obligations) && documentData.analysis.obligations.length > 0) || 
+                (documentData?.analysis?.rights && Array.isArray(documentData.analysis.rights) && documentData.analysis.rights.length > 0)) && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Obligations */}
+                  {documentData?.analysis?.obligations && Array.isArray(documentData.analysis.obligations) && documentData.analysis.obligations.length > 0 && (
+                    <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
+                      <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                        <FileText className="h-6 w-6 text-violet-600" />
+                        <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">📋 Your Obligations</span>
+                      </h2>
+                      <div className="space-y-3">
+                        {documentData.analysis.obligations.map((obligation: any, index: number) => (
+                          <div key={index} className="bg-orange-50 border border-orange-200 rounded p-3">
+                            {typeof obligation === 'string' ? (
+                              <div className="flex items-start gap-3">
+                                <span className="text-xl">⚖️</span>
+                                <p className="text-foreground">{obligation}</p>
+                              </div>
+                            ) : (
+                              <div>
+                                {obligation.party && (
+                                  <h5 className="font-semibold text-orange-900 mb-1">{obligation.party}</h5>
+                                )}
+                                <p className="text-orange-800 mb-1">{obligation.description}</p>
+                                {obligation.deadline && (
+                                  <p className="text-sm text-orange-700">⏰ Deadline: {obligation.deadline}</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Rights */}
+                  {documentData?.analysis?.rights && Array.isArray(documentData.analysis.rights) && documentData.analysis.rights.length > 0 && (
+                    <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
+                      <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                        <FileText className="h-6 w-6 text-violet-600" />
+                        <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">✅ Your Rights</span>
+                      </h2>
+                      <div className="space-y-3">
+                        {documentData.analysis.rights.map((right: any, index: number) => (
+                          <div key={index} className="bg-green-50 border border-green-200 rounded p-3">
+                            {typeof right === 'string' ? (
+                              <div className="flex items-start gap-3">
+                                <span className="text-xl">🛡️</span>
+                                <p className="text-foreground">{right}</p>
+                              </div>
+                            ) : (
+                              <div>
+                                {right.party && (
+                                  <h5 className="font-semibold text-green-900 mb-1">{right.party}</h5>
+                                )}
+                                <p className="text-green-800">{right.description}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Q&A Section - ChatGPT/Claude Style */}
               <div className="bg-card backdrop-blur-sm rounded-lg border border-border">
@@ -386,10 +630,14 @@ export default function AnalysePage() {
                       />
                       <button
                         onClick={handleSendMessage}
-                        disabled={!currentMessage.trim()}
-                        className="px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!currentMessage.trim() || isSendingMessage}
+                        className="px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                       >
-                        <Send className="h-4 w-4" />
+                        {isSendingMessage ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>

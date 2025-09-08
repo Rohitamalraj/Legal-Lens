@@ -31,7 +31,9 @@ export function RiskRadar({ percent }: { percent: number }) {
           <span className="text-2xl font-bold">{value}%</span>
         </div>
       </div>
-      <p className="mt-2 text-sm text-gray-600">65/100 (Moderate Risk)</p>
+      <p className="mt-2 text-sm text-gray-600">
+        {value}/100 ({value > 70 ? 'High Risk' : value > 40 ? 'Moderate Risk' : 'Low Risk'})
+      </p>
     </div>
   )
 }
