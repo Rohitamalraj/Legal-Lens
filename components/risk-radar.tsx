@@ -24,7 +24,7 @@ export function RiskRadar({ percent }: { percent: number }) {
           endAngle={-270}
         >
           <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-          <RadialBar background clockWise dataKey="value" cornerRadius={8} />
+          <RadialBar background dataKey="value" cornerRadius={8} />
         </RadialBarChart>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-sm text-gray-600">Risk Score</span>
