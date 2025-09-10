@@ -51,13 +51,22 @@ export class VertexAIService {
     this.model = process.env.VERTEX_AI_MODEL || 'gemini-1.5-pro';
 
     // Initialize Vertex AI client
-    this.vertexAI = new VertexAI({
-      project: this.projectId,
-      location: this.location,
-      googleAuthOptions: {
-        credentials: this.cloudConfig.getCredentials()
-      }
-    });
+    const credentials = this.cloudConfig.getCredentials();
+    if (credentials) {
+      this.vertexAI = new VertexAI({
+        project: this.projectId,
+        location: this.location,
+        googleAuthOptions: {
+          credentials: credentials
+        }
+      });
+    } else {
+      // Use Application Default Credentials
+      this.vertexAI = new VertexAI({
+        project: this.projectId,
+        location: this.location
+      });
+    }
   }
 
   /**
@@ -263,15 +272,25 @@ Answer:`;
       // Clean up the response to extract JSON
       let jsonText = analysisText.trim();
       
-      // Remove markdown code blocks if present
-      jsonText = jsonText.replace(/```json\s*/, '').replace(/```\s*$/, '');
+      // Remove markdown code blocks if present (more thorough cleaning)
+      jsonText = jsonText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '');
+      jsonText = jsonText.replace(/^```\s*/i, '').replace(/```\s*$/i, '');
+      
+      // Remove any leading/trailing whitespace again
+      jsonText = jsonText.trim();
+      
+      console.log('Cleaned JSON text for parsing:', jsonText.substring(0, 200) + '...');
       
       const parsed = JSON.parse(jsonText);
       
-      // Validate and set defaults
+      // Validate and set defaults - ensure riskScore is a number
+      const riskScore = typeof parsed.riskScore === 'string' ? 
+        parseInt(parsed.riskScore, 10) : 
+        (parsed.riskScore || 0);
+      
       return {
         summary: parsed.summary || 'No summary available',
-        riskScore: Math.min(Math.max(parsed.riskScore || 0, 0), 100),
+        riskScore: Math.min(Math.max(riskScore, 0), 100),
         keyRisks: Array.isArray(parsed.keyRisks) ? parsed.keyRisks : [],
         obligations: Array.isArray(parsed.obligations) ? parsed.obligations : [],
         rights: Array.isArray(parsed.rights) ? parsed.rights : [],
@@ -281,6 +300,7 @@ Answer:`;
       
     } catch (error) {
       console.error('Failed to parse analysis result:', error);
+      console.error('Original analysis text:', analysisText.substring(0, 500) + '...');
       
       // Fallback: try to extract information manually
       return this.fallbackAnalysis(analysisText);
@@ -291,6 +311,37 @@ Answer:`;
    * Fallback analysis if JSON parsing fails
    */
   private fallbackAnalysis(analysisText: string): LegalAnalysisResult {
+    // Try to extract JSON from markdown if it's wrapped
+    const jsonMatch = analysisText.match(/```json\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[1]);
+        console.log('Successfully extracted JSON from markdown in fallback');
+        
+        const riskScore = typeof parsed.riskScore === 'string' ? 
+          parseInt(parsed.riskScore, 10) : 
+          (parsed.riskScore || 50);
+        
+        return {
+          summary: parsed.summary || 'Analysis completed but formatting error occurred.',
+          riskScore: Math.min(Math.max(riskScore, 0), 100),
+          keyRisks: Array.isArray(parsed.keyRisks) ? parsed.keyRisks : [{
+            category: 'General',
+            description: 'Please review the document carefully for potential risks.',
+            severity: 'MEDIUM' as const,
+            recommendation: 'Consider consulting with a legal professional.'
+          }],
+          obligations: Array.isArray(parsed.obligations) ? parsed.obligations : [],
+          rights: Array.isArray(parsed.rights) ? parsed.rights : [],
+          keyTerms: Array.isArray(parsed.keyTerms) ? parsed.keyTerms : [],
+          recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : ['Review all terms carefully', 'Consider legal consultation if needed']
+        };
+      } catch (e) {
+        console.error('Failed to parse JSON even in fallback:', e);
+      }
+    }
+    
+    // Ultimate fallback
     return {
       summary: analysisText.length > 0 ? analysisText : 'Analysis completed but formatting error occurred.',
       riskScore: 50, // Default moderate risk
