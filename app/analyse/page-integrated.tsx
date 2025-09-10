@@ -35,15 +35,15 @@ export default function IntegratedAnalysePage() {
     loadExistingDocument()
 
     // Listen for document upload events
-    const handleDocumentUploaded = (event: CustomEvent) => {
-      const document = event.detail as DocumentAnalysis
-      setCurrentDocument(document)
+      const handleDocumentUploaded = (event: Event) => {
+      const { detail } = event as CustomEvent<DocumentAnalysis>
+      setCurrentDocument(detail)
     }
 
-    window.addEventListener('documentUploaded', handleDocumentUploaded as EventListener)
+    window.addEventListener('documentUploaded', handleDocumentUploaded)
 
     return () => {
-      window.removeEventListener('documentUploaded', handleDocumentUploaded as EventListener)
+      window.removeEventListener('documentUploaded', handleDocumentUploaded)
     }
   }, [])
 

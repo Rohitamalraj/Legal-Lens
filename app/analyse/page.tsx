@@ -366,161 +366,244 @@ export default function AnalysePage() {
               transition={{ duration: 0.6 }}
             >
               {/* Plain English Summary */}
-              <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
-                <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                  <FileText className="h-6 w-6 text-violet-600" />
-                  <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">🧠 Legal Lens Summary</span>
-                </h2>
-                <div className="space-y-4">
+              <motion.div 
+                className="relative overflow-hidden bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 dark:from-violet-950/30 dark:via-purple-950/30 dark:to-indigo-950/30 backdrop-blur-sm rounded-2xl p-8 border border-violet-200/50 dark:border-violet-800/30 shadow-xl"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+              >
+                {/* Decorative elements */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-400/10 to-purple-400/10 rounded-full blur-2xl"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-indigo-400/10 to-violet-400/10 rounded-full blur-xl"></div>
+                
+                <div className="relative z-10">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg">
+                      <FileText className="h-7 w-7 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                        Legal Lens Summary
+                      </h2>
+                      <p className="text-muted-foreground mt-1">AI-powered document breakdown in plain English</p>
+                    </div>
+                  </div>
+                  
                   {documentData?.analysis.summary && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">📄</span>
-                      <p className="text-foreground text-lg">{documentData.analysis.summary}</p>
+                    <div className="bg-white/80 dark:bg-gray-900/40 backdrop-blur-sm rounded-xl p-6 border border-violet-200/30 dark:border-violet-700/30 shadow-sm">
+                      <div className="flex items-start gap-4">
+                        <div className="p-2 bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/50 dark:to-purple-900/50 rounded-lg">
+                          <span className="text-2xl">🧠</span>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Document Overview</h3>
+                          <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg font-medium">
+                            {documentData.analysis.summary}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
                   {documentData?.analysis?.keyTerms && Array.isArray(documentData.analysis.keyTerms) && documentData.analysis.keyTerms.length > 0 && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">🔑</span>
-                      <div className="text-foreground text-lg">
-                        <p className="font-semibold mb-2">Key Terms:</p>
-                        <div className="space-y-3">
-                          {documentData.analysis.keyTerms.map((term: any, index: number) => (
-                            <div key={index} className="bg-blue-50 border border-blue-200 rounded p-3">
-                              {typeof term === 'string' ? (
-                                <p className="text-blue-800">{term}</p>
-                              ) : (
-                                <div>
-                                  {term.term && (
-                                    <h5 className="font-semibold text-blue-900 mb-1">{term.term}</h5>
-                                  )}
-                                  <p className="text-blue-800 text-sm">{term.definition}</p>
-                                  {term.importance && (
-                                    <span className={`inline-block mt-1 px-2 py-1 text-xs rounded ${
-                                      term.importance === 'HIGH' ? 'bg-blue-200 text-blue-900' :
-                                      term.importance === 'MEDIUM' ? 'bg-blue-100 text-blue-800' :
-                                      'bg-gray-100 text-gray-800'
-                                    }`}>
-                                      {term.importance}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                    <div className="bg-white/80 dark:bg-gray-900/40 backdrop-blur-sm rounded-xl p-6 border border-violet-200/30 dark:border-violet-700/30 shadow-sm mt-6">
+                      <div className="flex items-start gap-4">
+                        <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/50 dark:to-indigo-900/50 rounded-lg">
+                          <span className="text-2xl">🔑</span>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Key Legal Terms</h3>
+                          <div className="grid gap-4">
+                            {documentData.analysis.keyTerms.map((term: any, index: number) => (
+                              <div key={index} className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200/50 dark:border-blue-700/30 rounded-lg p-4 hover:shadow-md transition-all duration-200">
+                                {typeof term === 'string' ? (
+                                  <p className="text-blue-800 dark:text-blue-300 font-medium">{term}</p>
+                                ) : (
+                                  <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                      {term.term && (
+                                        <h5 className="font-bold text-blue-900 dark:text-blue-100 text-base">{term.term}</h5>
+                                      )}
+                                      {term.importance && (
+                                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                                          term.importance === 'HIGH' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                                          term.importance === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                                          'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                        }`}>
+                                          {term.importance} PRIORITY
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-blue-800 dark:text-blue-300 text-sm leading-relaxed">{term.definition}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
 
               {/* Risk Analysis */}
-              <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-red-950/20 dark:via-orange-950/20 dark:to-yellow-950/20 backdrop-blur-sm rounded-xl p-6 border border-red-200/30 dark:border-red-700/30 shadow-lg"
+              >
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                  <FileText className="h-6 w-6 text-violet-600" />
-                  <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">⚠️ Risk Analysis</span>
+                  <div className="p-2 bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-900/50 dark:to-orange-900/50 rounded-lg">
+                    <FileText className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <span className="bg-gradient-to-r from-red-600 to-orange-500 bg-clip-text text-transparent">Risk Analysis & Assessment</span>
                 </h2>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {documentData?.analysis?.riskScore !== undefined && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">📊</span>
-                      <div className="text-foreground text-lg">
-                        <p className="font-semibold">Risk Score: {documentData.analysis.riskScore}/100</p>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                          <div 
-                            className={`h-2.5 rounded-full ${
-                              documentData.analysis.riskScore > 70 ? 'bg-red-600' :
-                              documentData.analysis.riskScore > 40 ? 'bg-yellow-500' :
-                              'bg-green-600'
-                            }`}
-                            style={{ width: `${documentData.analysis.riskScore}%` }}
-                          ></div>
+                    <div className="bg-white/80 dark:bg-gray-900/40 backdrop-blur-sm rounded-lg p-4 border border-red-200/50 dark:border-red-700/30">
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="p-2 bg-gradient-to-br from-red-100 to-pink-100 dark:from-red-900/50 dark:to-pink-900/50 rounded-lg">
+                          <span className="text-2xl">📊</span>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">Overall Risk Score</h3>
+                          <p className="text-2xl font-bold text-red-600 dark:text-red-400">{documentData.analysis.riskScore}/100</p>
                         </div>
                       </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 shadow-inner">
+                        <motion.div 
+                          className={`h-3 rounded-full shadow-sm ${
+                            documentData.analysis.riskScore > 70 ? 'bg-gradient-to-r from-red-500 to-red-600' :
+                            documentData.analysis.riskScore > 40 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
+                            'bg-gradient-to-r from-green-500 to-emerald-500'
+                          }`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${documentData.analysis.riskScore}%` }}
+                          transition={{ duration: 1, delay: 0.5 }}
+                        />
+                      </div>
+                      <p className={`text-sm mt-2 font-medium ${
+                        documentData.analysis.riskScore > 70 ? 'text-red-700 dark:text-red-300' :
+                        documentData.analysis.riskScore > 40 ? 'text-yellow-700 dark:text-yellow-300' :
+                        'text-green-700 dark:text-green-300'
+                      }`}>
+                        {documentData.analysis.riskScore > 70 ? 'High Risk - Immediate attention required' :
+                         documentData.analysis.riskScore > 40 ? 'Medium Risk - Review recommended' :
+                         'Low Risk - Acceptable level'}
+                      </p>
                     </div>
                   )}
                   {documentData?.analysis?.keyRisks && Array.isArray(documentData.analysis.keyRisks) && documentData.analysis.keyRisks.length > 0 && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">🔴</span>
-                      <div className="text-foreground text-lg">
-                        <p className="font-semibold mb-2">Key Risks:</p>
-                        <div className="space-y-3">
-                          {documentData.analysis.keyRisks.map((risk: any, index: number) => (
-                            <div key={index} className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
-                              {typeof risk === 'string' ? (
-                                <p className="text-red-800">{risk}</p>
-                              ) : (
-                                <div>
+                    <div className="bg-white/80 dark:bg-gray-900/40 backdrop-blur-sm rounded-lg p-4 border border-red-200/50 dark:border-red-700/30">
+                      <h3 className="font-semibold mb-4 text-red-900 dark:text-red-100 text-lg flex items-center gap-2">
+                        <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                        Critical Risk Factors
+                      </h3>
+                      <div className="grid gap-4">
+                        {documentData.analysis.keyRisks.map((risk: any, index: number) => (
+                          <div key={index} className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/30 dark:to-pink-950/30 border-l-4 border-red-400 dark:border-red-500 p-4 rounded-lg hover:shadow-md transition-all duration-200">
+                            {typeof risk === 'string' ? (
+                              <div className="flex items-start gap-3">
+                                <span className="text-xl">🔴</span>
+                                <p className="text-red-800 dark:text-red-300 font-medium">{risk}</p>
+                              </div>
+                            ) : (
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
                                   {risk.category && (
-                                    <h4 className="font-semibold text-red-900 mb-1">{risk.category}</h4>
+                                    <h4 className="font-bold text-red-900 dark:text-red-100">{risk.category}</h4>
                                   )}
-                                  <p className="text-red-800 text-sm mb-2">{risk.description}</p>
                                   {risk.severity && (
-                                    <span className={`inline-block px-2 py-1 text-xs rounded ${
-                                      risk.severity === 'CRITICAL' ? 'bg-red-200 text-red-900' :
-                                      risk.severity === 'HIGH' ? 'bg-orange-200 text-orange-900' :
-                                      'bg-yellow-200 text-yellow-900'
+                                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                                      risk.severity === 'CRITICAL' ? 'bg-red-200 text-red-900 dark:bg-red-900/50 dark:text-red-300' :
+                                      risk.severity === 'HIGH' ? 'bg-orange-200 text-orange-900 dark:bg-orange-900/50 dark:text-orange-300' :
+                                      'bg-yellow-200 text-yellow-900 dark:bg-yellow-900/50 dark:text-yellow-300'
                                     }`}>
-                                      {risk.severity}
+                                      {risk.severity} RISK
                                     </span>
                                   )}
-                                  {risk.recommendation && (
-                                    <p className="text-red-700 text-sm mt-2 italic">💡 {risk.recommendation}</p>
-                                  )}
                                 </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                                <p className="text-red-800 dark:text-red-300 text-sm mb-2 leading-relaxed">{risk.description}</p>
+                                {risk.recommendation && (
+                                  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-700/30 rounded-lg p-3 mt-2">
+                                    <p className="text-blue-800 dark:text-blue-300 text-sm font-medium flex items-start gap-2">
+                                      <span className="text-blue-600 dark:text-blue-400">💡</span>
+                                      {risk.recommendation}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
                   {documentData?.analysis?.recommendations && Array.isArray(documentData.analysis.recommendations) && documentData.analysis.recommendations.length > 0 && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">💡</span>
-                      <div className="text-foreground text-lg">
-                        <p className="font-semibold mb-2">Recommendations:</p>
-                        <ul className="list-disc list-inside space-y-1">
-                          {documentData.analysis.recommendations.map((rec: any, index: number) => (
-                            <li key={index}>
-                              {typeof rec === 'string' ? rec : rec.description || rec.recommendation || JSON.stringify(rec)}
-                            </li>
-                          ))}
-                        </ul>
+                    <div className="bg-white/80 dark:bg-gray-900/40 backdrop-blur-sm rounded-lg p-4 border border-blue-200/50 dark:border-blue-700/30">
+                      <h3 className="font-semibold mb-4 text-blue-900 dark:text-blue-100 text-lg flex items-center gap-2">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                        Expert Recommendations
+                      </h3>
+                      <div className="space-y-3">
+                        {documentData.analysis.recommendations.map((rec: any, index: number) => (
+                          <div key={index} className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border border-blue-200/50 dark:border-blue-700/30 rounded-lg p-3 hover:shadow-sm transition-all duration-200">
+                            <div className="flex items-start gap-3">
+                              <span className="text-blue-600 dark:text-blue-400 mt-1">💡</span>
+                              <p className="text-blue-800 dark:text-blue-300 font-medium leading-relaxed">
+                                {typeof rec === 'string' ? rec : rec.description || rec.recommendation || JSON.stringify(rec)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
 
               {/* Obligations and Rights */}
               {((documentData?.analysis?.obligations && Array.isArray(documentData.analysis.obligations) && documentData.analysis.obligations.length > 0) || 
                 (documentData?.analysis?.rights && Array.isArray(documentData.analysis.rights) && documentData.analysis.rights.length > 0)) && (
-                <div className="grid md:grid-cols-2 gap-6">
+                <motion.div 
+                  className="grid md:grid-cols-2 gap-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                >
                   {/* Obligations */}
                   {documentData?.analysis?.obligations && Array.isArray(documentData.analysis.obligations) && documentData.analysis.obligations.length > 0 && (
-                    <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
+                    <div className="bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 dark:from-orange-950/20 dark:via-red-950/20 dark:to-pink-950/20 backdrop-blur-sm rounded-xl p-6 border border-orange-200/30 dark:border-orange-700/30 shadow-lg">
                       <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                        <FileText className="h-6 w-6 text-violet-600" />
-                        <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">📋 Your Obligations</span>
+                        <div className="p-2 bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900/50 dark:to-red-900/50 rounded-lg">
+                          <FileText className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <span className="bg-gradient-to-r from-orange-600 to-red-500 bg-clip-text text-transparent">Your Legal Obligations</span>
                       </h2>
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {documentData.analysis.obligations.map((obligation: any, index: number) => (
-                          <div key={index} className="bg-orange-50 border border-orange-200 rounded p-3">
+                          <div key={index} className="bg-white/80 dark:bg-gray-900/40 backdrop-blur-sm border border-orange-200/50 dark:border-orange-700/30 rounded-lg p-4 hover:shadow-md transition-all duration-200">
                             {typeof obligation === 'string' ? (
                               <div className="flex items-start gap-3">
-                                <span className="text-xl">⚖️</span>
-                                <p className="text-foreground">{obligation}</p>
+                                <div className="p-1.5 bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900/50 dark:to-red-900/50 rounded">
+                                  <span className="text-lg">⚖️</span>
+                                </div>
+                                <p className="text-orange-800 dark:text-orange-300 font-medium leading-relaxed">{obligation}</p>
                               </div>
                             ) : (
                               <div>
-                                {obligation.party && (
-                                  <h5 className="font-semibold text-orange-900 mb-1">{obligation.party}</h5>
-                                )}
-                                <p className="text-orange-800 mb-1">{obligation.description}</p>
-                                {obligation.deadline && (
-                                  <p className="text-sm text-orange-700">⏰ Deadline: {obligation.deadline}</p>
-                                )}
+                                <div className="flex items-center justify-between mb-2">
+                                  {obligation.party && (
+                                    <h5 className="font-bold text-orange-900 dark:text-orange-100">{obligation.party}</h5>
+                                  )}
+                                  {obligation.deadline && (
+                                    <span className="px-3 py-1 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 text-xs font-semibold rounded-full">
+                                      ⏰ {obligation.deadline}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-orange-800 dark:text-orange-300 leading-relaxed">{obligation.description}</p>
                               </div>
                             )}
                           </div>
@@ -531,25 +614,29 @@ export default function AnalysePage() {
                   
                   {/* Rights */}
                   {documentData?.analysis?.rights && Array.isArray(documentData.analysis.rights) && documentData.analysis.rights.length > 0 && (
-                    <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
+                    <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-green-950/20 dark:via-emerald-950/20 dark:to-teal-950/20 backdrop-blur-sm rounded-xl p-6 border border-green-200/30 dark:border-green-700/30 shadow-lg">
                       <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                        <FileText className="h-6 w-6 text-violet-600" />
-                        <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">✅ Your Rights</span>
+                        <div className="p-2 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 rounded-lg">
+                          <FileText className="h-6 w-6 text-green-600 dark:text-green-400" />
+                        </div>
+                        <span className="bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">Your Legal Rights</span>
                       </h2>
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {documentData.analysis.rights.map((right: any, index: number) => (
-                          <div key={index} className="bg-green-50 border border-green-200 rounded p-3">
+                          <div key={index} className="bg-white/80 dark:bg-gray-900/40 backdrop-blur-sm border border-green-200/50 dark:border-green-700/30 rounded-lg p-4 hover:shadow-md transition-all duration-200">
                             {typeof right === 'string' ? (
                               <div className="flex items-start gap-3">
-                                <span className="text-xl">🛡️</span>
-                                <p className="text-foreground">{right}</p>
+                                <div className="p-1.5 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 rounded">
+                                  <span className="text-lg">🛡️</span>
+                                </div>
+                                <p className="text-green-800 dark:text-green-300 font-medium leading-relaxed">{right}</p>
                               </div>
                             ) : (
                               <div>
                                 {right.party && (
-                                  <h5 className="font-semibold text-green-900 mb-1">{right.party}</h5>
+                                  <h5 className="font-bold text-green-900 dark:text-green-100 mb-2">{right.party}</h5>
                                 )}
-                                <p className="text-green-800">{right.description}</p>
+                                <p className="text-green-800 dark:text-green-300 leading-relaxed">{right.description}</p>
                               </div>
                             )}
                           </div>
@@ -557,7 +644,7 @@ export default function AnalysePage() {
                       </div>
                     </div>
                   )}
-                </div>
+                </motion.div>
               )}
 
               {/* Q&A Section - ChatGPT/Claude Style */}
