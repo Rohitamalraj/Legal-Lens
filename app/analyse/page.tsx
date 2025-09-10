@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Upload, FileText, MessageSquare, Send, User, Bot } from 'lucide-react'
+import { Upload, FileText, MessageSquare, Send, User, Bot, AlertTriangle, AlertCircle, CheckCircle, BookOpen, Shield, Clock, Search } from 'lucide-react'
 import { apiService, type DocumentAnalysis } from '@/lib/api'
 import { debugDocumentData } from '@/lib/debug-utils'
 
@@ -365,298 +365,573 @@ export default function AnalysePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              {/* Plain English Summary */}
-              <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
-                <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                  <FileText className="h-6 w-6 text-violet-600" />
-                  <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">🧠 Legal Lens Summary</span>
+              {/* Document Overview Header */}
+              <motion.div
+                className="text-center mb-12"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+              >
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                  Analysis <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Complete</span>
                 </h2>
-                <div className="space-y-4">
-                  {documentData?.analysis.summary && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">📄</span>
-                      <p className="text-foreground text-lg">{documentData.analysis.summary}</p>
+                <p className="text-lg text-muted-foreground">
+                  Here's what we found in your document - broken down in plain English
+                </p>
+              </motion.div>
+
+              {/* Summary Section - Hero Style */}
+              <motion.div
+                className="relative group"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-blue-500/20 rounded-xl">
+                      <FileText className="h-8 w-8 text-blue-400" />
                     </div>
-                  )}
-                  {documentData?.analysis?.keyTerms && Array.isArray(documentData.analysis.keyTerms) && documentData.analysis.keyTerms.length > 0 && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">🔑</span>
-                      <div className="text-foreground text-lg">
-                        <p className="font-semibold mb-2">Key Terms:</p>
-                        <div className="space-y-3">
-                          {documentData.analysis.keyTerms.map((term: any, index: number) => (
-                            <div key={index} className="bg-blue-50 border border-blue-200 rounded p-3">
-                              {typeof term === 'string' ? (
-                                <p className="text-blue-800">{term}</p>
-                              ) : (
-                                <div>
-                                  {term.term && (
-                                    <h5 className="font-semibold text-blue-900 mb-1">{term.term}</h5>
-                                  )}
-                                  <p className="text-blue-800 text-sm">{term.definition}</p>
-                                  {term.importance && (
-                                    <span className={`inline-block mt-1 px-2 py-1 text-xs rounded ${
-                                      term.importance === 'HIGH' ? 'bg-blue-200 text-blue-900' :
-                                      term.importance === 'MEDIUM' ? 'bg-blue-100 text-blue-800' :
-                                      'bg-gray-100 text-gray-800'
-                                    }`}>
-                                      {term.importance}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-white">Document Summary</h3>
+                      <p className="text-gray-400">AI-powered breakdown in plain English</p>
+                    </div>
+                  </div>
+                  
+                  {documentData?.analysis.summary && (
+                    <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
+                      <p className="text-gray-100 text-lg leading-relaxed">{documentData.analysis.summary}</p>
                     </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Risk Analysis */}
-              <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
-                <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                  <FileText className="h-6 w-6 text-violet-600" />
-                  <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">⚠️ Risk Analysis</span>
-                </h2>
-                <div className="space-y-4">
+              {/* Key Terms Section */}
+              {documentData?.analysis?.keyTerms && Array.isArray(documentData.analysis.keyTerms) && documentData.analysis.keyTerms.length > 0 && (
+                <motion.div
+                  className="relative group"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-cyan-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                  <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-3 bg-indigo-500/20 rounded-xl">
+                        <Search className="h-8 w-8 text-indigo-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-white">Key Terms Explained</h3>
+                        <p className="text-gray-400">Important legal terms made simple</p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid gap-4">
+                      {documentData.analysis.keyTerms.map((term: any, index: number) => (
+                        <motion.div
+                          key={index}
+                          className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 hover:border-indigo-500/50 transition-all duration-300"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.4, delay: 0.1 * index }}
+                        >
+                          {typeof term === 'string' ? (
+                            <p className="text-gray-100">{term}</p>
+                          ) : (
+                            <div>
+                              {term.term && (
+                                <h5 className="font-bold text-white text-lg mb-2 flex items-center gap-2">
+                                  <span className="text-indigo-400">📘</span>
+                                  {term.term}
+                                </h5>
+                              )}
+                              <p className="text-gray-300 leading-relaxed mb-3">{term.definition}</p>
+                              {term.importance && (
+                                <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${
+                                  term.importance === 'HIGH' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                                  term.importance === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                                  'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                                }`}>
+                                  <div className={`w-2 h-2 rounded-full mr-2 ${
+                                    term.importance === 'HIGH' ? 'bg-red-400' :
+                                    term.importance === 'MEDIUM' ? 'bg-yellow-400' :
+                                    'bg-gray-400'
+                                  }`}></div>
+                                  {term.importance} PRIORITY
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Risk Analysis - Dashboard Style */}
+              <motion.div
+                className="relative group"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
+                  
+                  {/* Risk Score Dashboard */}
                   {documentData?.analysis?.riskScore !== undefined && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">📊</span>
-                      <div className="text-foreground text-lg">
-                        <p className="font-semibold">Risk Score: {documentData.analysis.riskScore}/100</p>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                          <div 
-                            className={`h-2.5 rounded-full ${
-                              documentData.analysis.riskScore > 70 ? 'bg-red-600' :
-                              documentData.analysis.riskScore > 40 ? 'bg-yellow-500' :
-                              'bg-green-600'
+                    <div className="mb-8">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="p-3 bg-red-500/20 rounded-xl">
+                          <AlertTriangle className="h-8 w-8 text-red-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold text-white">Risk Assessment</h3>
+                          <p className="text-gray-400">AI-powered risk evaluation</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-lg font-semibold text-gray-200">Overall Risk Score</span>
+                          <span className="text-3xl font-bold text-white">{documentData.analysis.riskScore}/100</span>
+                        </div>
+                        
+                        <div className="relative w-full bg-gray-700 rounded-full h-4 mb-2">
+                          <motion.div 
+                            className={`h-4 rounded-full shadow-lg ${
+                              documentData.analysis.riskScore > 70 ? 'bg-gradient-to-r from-red-500 to-red-600' :
+                              documentData.analysis.riskScore > 40 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
+                              'bg-gradient-to-r from-green-500 to-green-600'
                             }`}
-                            style={{ width: `${documentData.analysis.riskScore}%` }}
-                          ></div>
+                            initial={{ width: 0 }}
+                            animate={{ width: `${documentData.analysis.riskScore}%` }}
+                            transition={{ duration: 1, delay: 0.5 }}
+                          ></motion.div>
+                        </div>
+                        
+                        <div className="flex justify-between text-sm text-gray-400">
+                          <span>Low Risk</span>
+                          <span>Medium Risk</span>
+                          <span>High Risk</span>
+                        </div>
+                        
+                        <div className="mt-4 p-4 bg-gray-900/50 rounded-lg">
+                          <p className="text-sm text-gray-300">
+                            {documentData.analysis.riskScore > 70 ? '🚨 High risk detected. Review carefully before signing.' :
+                             documentData.analysis.riskScore > 40 ? '⚠️ Moderate risk. Some clauses need attention.' :
+                             '✅ Low risk. Document appears standard.'}
+                          </p>
                         </div>
                       </div>
                     </div>
                   )}
+
+                  {/* Key Risks */}
                   {documentData?.analysis?.keyRisks && Array.isArray(documentData.analysis.keyRisks) && documentData.analysis.keyRisks.length > 0 && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">🔴</span>
-                      <div className="text-foreground text-lg">
-                        <p className="font-semibold mb-2">Key Risks:</p>
-                        <div className="space-y-3">
-                          {documentData.analysis.keyRisks.map((risk: any, index: number) => (
-                            <div key={index} className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
-                              {typeof risk === 'string' ? (
-                                <p className="text-red-800">{risk}</p>
-                              ) : (
-                                <div>
+                    <div className="mb-8">
+                      <h4 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <AlertCircle className="h-6 w-6 text-red-400" />
+                        Key Risk Areas
+                      </h4>
+                      
+                      <div className="grid gap-4">
+                        {documentData.analysis.keyRisks.map((risk: any, index: number) => (
+                          <motion.div
+                            key={index}
+                            className="bg-gray-800/50 rounded-xl border border-gray-700/50 hover:border-red-500/50 transition-all duration-300 overflow-hidden"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.4, delay: 0.1 * index }}
+                          >
+                            {typeof risk === 'string' ? (
+                              <div className="p-6">
+                                <p className="text-gray-100">{risk}</p>
+                              </div>
+                            ) : (
+                              <div className="p-6">
+                                <div className="flex items-start justify-between mb-3">
                                   {risk.category && (
-                                    <h4 className="font-semibold text-red-900 mb-1">{risk.category}</h4>
+                                    <h5 className="font-bold text-white text-lg flex items-center gap-2">
+                                      <span className="text-red-400">⚠️</span>
+                                      {risk.category}
+                                    </h5>
                                   )}
-                                  <p className="text-red-800 text-sm mb-2">{risk.description}</p>
                                   {risk.severity && (
-                                    <span className={`inline-block px-2 py-1 text-xs rounded ${
-                                      risk.severity === 'CRITICAL' ? 'bg-red-200 text-red-900' :
-                                      risk.severity === 'HIGH' ? 'bg-orange-200 text-orange-900' :
-                                      'bg-yellow-200 text-yellow-900'
+                                    <span className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-full ${
+                                      risk.severity === 'CRITICAL' ? 'bg-red-600/30 text-red-300 border border-red-500/50' :
+                                      risk.severity === 'HIGH' ? 'bg-orange-600/30 text-orange-300 border border-orange-500/50' :
+                                      'bg-yellow-600/30 text-yellow-300 border border-yellow-500/50'
                                     }`}>
+                                      <div className={`w-2 h-2 rounded-full mr-2 ${
+                                        risk.severity === 'CRITICAL' ? 'bg-red-400' :
+                                        risk.severity === 'HIGH' ? 'bg-orange-400' :
+                                        'bg-yellow-400'
+                                      }`}></div>
                                       {risk.severity}
                                     </span>
                                   )}
-                                  {risk.recommendation && (
-                                    <p className="text-red-700 text-sm mt-2 italic">💡 {risk.recommendation}</p>
-                                  )}
                                 </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                                
+                                <p className="text-gray-300 leading-relaxed mb-4">{risk.description}</p>
+                                
+                                {risk.recommendation && (
+                                  <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-4">
+                                    <p className="text-sm text-blue-300 flex items-start gap-2">
+                                      <span className="text-blue-400 mt-0.5">💡</span>
+                                      <span className="font-medium">Recommendation:</span>
+                                    </p>
+                                    <p className="text-sm text-blue-200 mt-1 ml-6">{risk.recommendation}</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </motion.div>
+                        ))}
                       </div>
                     </div>
                   )}
+
+                  {/* Recommendations */}
                   {documentData?.analysis?.recommendations && Array.isArray(documentData.analysis.recommendations) && documentData.analysis.recommendations.length > 0 && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">💡</span>
-                      <div className="text-foreground text-lg">
-                        <p className="font-semibold mb-2">Recommendations:</p>
-                        <ul className="list-disc list-inside space-y-1">
-                          {documentData.analysis.recommendations.map((rec: any, index: number) => (
-                            <li key={index}>
+                    <div>
+                      <h4 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <CheckCircle className="h-6 w-6 text-green-400" />
+                        Expert Recommendations
+                      </h4>
+                      
+                      <div className="grid gap-3">
+                        {documentData.analysis.recommendations.map((rec: any, index: number) => (
+                          <motion.div
+                            key={index}
+                            className="bg-green-900/20 border border-green-700/30 rounded-lg p-4 hover:border-green-500/50 transition-all duration-300"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: 0.1 * index }}
+                          >
+                            <p className="text-green-100 flex items-start gap-3">
+                              <span className="text-green-400 mt-1">✓</span>
                               {typeof rec === 'string' ? rec : rec.description || rec.recommendation || JSON.stringify(rec)}
-                            </li>
-                          ))}
-                        </ul>
+                            </p>
+                          </motion.div>
+                        ))}
                       </div>
                     </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Obligations and Rights */}
+              {/* Obligations and Rights - Professional Dashboard */}
               {((documentData?.analysis?.obligations && Array.isArray(documentData.analysis.obligations) && documentData.analysis.obligations.length > 0) || 
                 (documentData?.analysis?.rights && Array.isArray(documentData.analysis.rights) && documentData.analysis.rights.length > 0)) && (
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid lg:grid-cols-2 gap-8">
+                  
                   {/* Obligations */}
                   {documentData?.analysis?.obligations && Array.isArray(documentData.analysis.obligations) && documentData.analysis.obligations.length > 0 && (
-                    <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
-                      <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                        <FileText className="h-6 w-6 text-violet-600" />
-                        <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">📋 Your Obligations</span>
-                      </h2>
-                      <div className="space-y-3">
-                        {documentData.analysis.obligations.map((obligation: any, index: number) => (
-                          <div key={index} className="bg-orange-50 border border-orange-200 rounded p-3">
-                            {typeof obligation === 'string' ? (
-                              <div className="flex items-start gap-3">
-                                <span className="text-xl">⚖️</span>
-                                <p className="text-foreground">{obligation}</p>
-                              </div>
-                            ) : (
-                              <div>
-                                {obligation.party && (
-                                  <h5 className="font-semibold text-orange-900 mb-1">{obligation.party}</h5>
-                                )}
-                                <p className="text-orange-800 mb-1">{obligation.description}</p>
-                                {obligation.deadline && (
-                                  <p className="text-sm text-orange-700">⏰ Deadline: {obligation.deadline}</p>
-                                )}
-                              </div>
-                            )}
+                    <motion.div
+                      className="relative group"
+                      initial={{ opacity: 0, x: -30 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.6, delay: 0.8 }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                      <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
+                        
+                        <div className="flex items-center gap-4 mb-8">
+                          <div className="p-3 bg-orange-500/20 rounded-xl">
+                            <BookOpen className="h-8 w-8 text-orange-400" />
                           </div>
-                        ))}
+                          <div>
+                            <h3 className="text-2xl font-bold text-white">Your Obligations</h3>
+                            <p className="text-gray-400">Legal responsibilities and duties</p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          {documentData.analysis.obligations.map((obligation: any, index: number) => (
+                            <motion.div
+                              key={index}
+                              className="bg-gray-800/50 border border-gray-700/50 rounded-xl hover:border-orange-500/50 transition-all duration-300 overflow-hidden"
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, delay: 0.1 * index }}
+                            >
+                              {typeof obligation === 'string' ? (
+                                <div className="p-6">
+                                  <div className="flex items-start gap-4">
+                                    <div className="flex-shrink-0 w-8 h-8 bg-orange-600/20 rounded-full flex items-center justify-center mt-1">
+                                      <span className="text-orange-400 font-bold text-sm">{index + 1}</span>
+                                    </div>
+                                    <p className="text-gray-100 leading-relaxed">{obligation}</p>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="p-6">
+                                  <div className="flex items-start gap-4">
+                                    <div className="flex-shrink-0 w-8 h-8 bg-orange-600/20 rounded-full flex items-center justify-center mt-1">
+                                      <span className="text-orange-400 font-bold text-sm">{index + 1}</span>
+                                    </div>
+                                    <div className="flex-1">
+                                      {obligation.party && (
+                                        <h5 className="font-bold text-white text-lg mb-2 flex items-center gap-2">
+                                          <span className="text-orange-400">⚖️</span>
+                                          {obligation.party}
+                                        </h5>
+                                      )}
+                                      <p className="text-gray-300 leading-relaxed mb-3">{obligation.description}</p>
+                                      {obligation.deadline && (
+                                        <div className="inline-flex items-center gap-2 px-3 py-2 bg-orange-900/20 border border-orange-700/30 rounded-lg">
+                                          <Clock className="h-4 w-4 text-orange-400" />
+                                          <span className="text-orange-300 text-sm font-medium">
+                                            Deadline: {obligation.deadline}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </motion.div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
                   )}
                   
                   {/* Rights */}
                   {documentData?.analysis?.rights && Array.isArray(documentData.analysis.rights) && documentData.analysis.rights.length > 0 && (
-                    <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
-                      <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                        <FileText className="h-6 w-6 text-violet-600" />
-                        <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">✅ Your Rights</span>
-                      </h2>
-                      <div className="space-y-3">
-                        {documentData.analysis.rights.map((right: any, index: number) => (
-                          <div key={index} className="bg-green-50 border border-green-200 rounded p-3">
-                            {typeof right === 'string' ? (
-                              <div className="flex items-start gap-3">
-                                <span className="text-xl">🛡️</span>
-                                <p className="text-foreground">{right}</p>
-                              </div>
-                            ) : (
-                              <div>
-                                {right.party && (
-                                  <h5 className="font-semibold text-green-900 mb-1">{right.party}</h5>
-                                )}
-                                <p className="text-green-800">{right.description}</p>
-                              </div>
-                            )}
+                    <motion.div
+                      className="relative group"
+                      initial={{ opacity: 0, x: 30 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.6, delay: 1.0 }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                      <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
+                        
+                        <div className="flex items-center gap-4 mb-8">
+                          <div className="p-3 bg-green-500/20 rounded-xl">
+                            <Shield className="h-8 w-8 text-green-400" />
                           </div>
-                        ))}
+                          <div>
+                            <h3 className="text-2xl font-bold text-white">Your Rights</h3>
+                            <p className="text-gray-400">Legal protections and entitlements</p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          {documentData.analysis.rights.map((right: any, index: number) => (
+                            <motion.div
+                              key={index}
+                              className="bg-gray-800/50 border border-gray-700/50 rounded-xl hover:border-green-500/50 transition-all duration-300 overflow-hidden"
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, delay: 0.1 * index }}
+                            >
+                              {typeof right === 'string' ? (
+                                <div className="p-6">
+                                  <div className="flex items-start gap-4">
+                                    <div className="flex-shrink-0 w-8 h-8 bg-green-600/20 rounded-full flex items-center justify-center mt-1">
+                                      <span className="text-green-400 font-bold text-sm">{index + 1}</span>
+                                    </div>
+                                    <p className="text-gray-100 leading-relaxed">{right}</p>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="p-6">
+                                  <div className="flex items-start gap-4">
+                                    <div className="flex-shrink-0 w-8 h-8 bg-green-600/20 rounded-full flex items-center justify-center mt-1">
+                                      <span className="text-green-400 font-bold text-sm">{index + 1}</span>
+                                    </div>
+                                    <div className="flex-1">
+                                      {right.party && (
+                                        <h5 className="font-bold text-white text-lg mb-2 flex items-center gap-2">
+                                          <span className="text-green-400">🛡️</span>
+                                          {right.party}
+                                        </h5>
+                                      )}
+                                      <p className="text-gray-300 leading-relaxed">{right.description}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </motion.div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
                   )}
                 </div>
               )}
 
-              {/* Q&A Section - ChatGPT/Claude Style */}
-              <div className="bg-card backdrop-blur-sm rounded-lg border border-border">
-                <div className="p-6 border-b border-border">
-                  <h2 className="text-2xl font-bold flex items-center gap-3">
-                    <MessageSquare className="h-6 w-6 text-violet-600" />
-                    <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">💬 Ask Questions About Your Document</span>
-                  </h2>
-                  <p className="text-muted-foreground mt-2">Ask me anything about your legal document and I'll explain it in simple terms</p>
-                </div>
-                
-                {/* Chat Container */}
-                <div className="flex flex-col h-96">
-                  {/* Chat Messages */}
-                  <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                    {chatMessages.length === 0 && (
-                      <div className="text-center py-8">
-                        <div className="text-muted-foreground text-lg mb-4">💡 Try asking questions like:</div>
-                        <div className="space-y-2">
-                          <div className="text-foreground bg-muted rounded-lg p-3 inline-block">
-                            "What happens if I don't pay rent on time?"
-                          </div>
-                          <div className="text-foreground bg-muted rounded-lg p-3 inline-block">
-                            "When does this lease end?"
-                          </div>
-                          <div className="text-foreground bg-muted rounded-lg p-3 inline-block">
-                            "Who is responsible for utilities?"
-                          </div>
-                        </div>
+              {/* Q&A Section - Premium Chat Interface */}
+              <motion.div
+                className="relative group"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 1.2 }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-500/20 to-purple-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl shadow-2xl transition-all duration-300 hover:border-gray-600/50">
+                  
+                  {/* Header */}
+                  <div className="p-8 border-b border-gray-700/50">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 bg-violet-500/20 rounded-xl">
+                        <MessageSquare className="h-8 w-8 text-violet-400" />
                       </div>
-                    )}
-                    {chatMessages.map((msg, index) => (
-                      <div key={index} className="flex gap-4">
-                        {/* Avatar */}
-                        <div className="flex-shrink-0">
-                          {msg.role === 'user' ? (
-                            <div className="w-8 h-8 bg-violet-600 rounded-full flex items-center justify-center">
-                              <User className="w-4 h-4 text-white" />
-                            </div>
-                          ) : (
-                            <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                              <Bot className="w-4 h-4 text-white" />
-                            </div>
-                          )}
-                        </div>
-                        {/* Message */}
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-muted-foreground mb-1">
-                            {msg.role === 'user' ? 'You' : 'Legal Lens'}
-                          </div>
-                          <div className="text-foreground bg-muted rounded-lg p-4 leading-relaxed">
-                            {msg.message}
-                          </div>
-                        </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-white">AI Legal Assistant</h3>
+                        <p className="text-gray-400">Ask questions about your document</p>
                       </div>
-                    ))}
+                    </div>
                   </div>
+                  
+                  {/* Chat Container */}
+                  <div className="flex flex-col h-96">
+                    {/* Chat Messages */}
+                    <div className="flex-1 overflow-y-auto p-8 space-y-6">
+                      {chatMessages.length === 0 && (
+                        <div className="text-center py-12">
+                          <div className="w-16 h-16 bg-violet-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Bot className="h-8 w-8 text-violet-400" />
+                          </div>
+                          <h4 className="text-xl font-semibold text-white mb-4">💡 Try asking questions like:</h4>
+                          <div className="grid gap-4 max-w-2xl mx-auto">
+                            <motion.div 
+                              className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 hover:border-violet-500/50 transition-all duration-300 cursor-pointer"
+                              whileHover={{ scale: 1.02 }}
+                              onClick={() => setCurrentMessage("What happens if I don't pay rent on time?")}
+                            >
+                              <p className="text-gray-100">"What happens if I don't pay rent on time?"</p>
+                            </motion.div>
+                            <motion.div 
+                              className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 hover:border-violet-500/50 transition-all duration-300 cursor-pointer"
+                              whileHover={{ scale: 1.02 }}
+                              onClick={() => setCurrentMessage("When does this lease end?")}
+                            >
+                              <p className="text-gray-100">"When does this lease end?"</p>
+                            </motion.div>
+                            <motion.div 
+                              className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 hover:border-violet-500/50 transition-all duration-300 cursor-pointer"
+                              whileHover={{ scale: 1.02 }}
+                              onClick={() => setCurrentMessage("Who is responsible for utilities?")}
+                            >
+                              <p className="text-gray-100">"Who is responsible for utilities?"</p>
+                            </motion.div>
+                          </div>
+                        </div>
+                      )}
+                      {chatMessages.map((msg, index) => (
+                        <motion.div 
+                          key={index} 
+                          className="flex gap-4"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4 }}
+                        >
+                          {/* Avatar */}
+                          <div className="flex-shrink-0">
+                            {msg.role === 'user' ? (
+                              <div className="w-10 h-10 bg-gradient-to-r from-violet-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                                <User className="w-5 h-5 text-white" />
+                              </div>
+                            ) : (
+                              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
+                                <Bot className="w-5 h-5 text-white" />
+                              </div>
+                            )}
+                          </div>
+                          {/* Message */}
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-400 mb-2 flex items-center gap-2">
+                              {msg.role === 'user' ? (
+                                <>
+                                  <span className="w-2 h-2 bg-violet-400 rounded-full"></span>
+                                  You
+                                </>
+                              ) : (
+                                <>
+                                  <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                                  Legal Lens AI
+                                </>
+                              )}
+                            </div>
+                            <div className={`rounded-xl p-4 leading-relaxed shadow-lg ${
+                              msg.role === 'user' 
+                                ? 'bg-gradient-to-r from-violet-600/20 to-purple-600/20 border border-violet-500/30 text-gray-100' 
+                                : 'bg-gradient-to-r from-gray-800/50 to-gray-700/50 border border-gray-600/30 text-gray-100'
+                            }`}>
+                              {msg.message}
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
 
-                  {/* Chat Input */}
-                  <div className="p-6 border-t border-border">
-                    <div className="flex gap-3">
-                      <input
-                        type="text"
-                        value={currentMessage}
-                        onChange={(e) => setCurrentMessage(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                        placeholder="Ask a question about your document..."
-                        className="flex-1 px-4 py-3 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
-                      />
-                      <button
-                        onClick={handleSendMessage}
-                        disabled={!currentMessage.trim() || isSendingMessage}
-                        className="px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                      >
-                        {isSendingMessage ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
-                      </button>
+                    {/* Chat Input */}
+                    <div className="p-8 border-t border-gray-700/50">
+                      <div className="flex gap-4">
+                        <div className="flex-1 relative">
+                          <input
+                            type="text"
+                            value={currentMessage}
+                            onChange={(e) => setCurrentMessage(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                            placeholder="Ask a question about your document..."
+                            className="w-full px-6 py-4 bg-gray-800/50 border border-gray-700/50 rounded-xl text-gray-100 placeholder-gray-400 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-300"
+                          />
+                        </div>
+                        <motion.button
+                          onClick={handleSendMessage}
+                          disabled={!currentMessage.trim() || isSendingMessage}
+                          className="px-6 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl hover:from-violet-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          {isSendingMessage ? (
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          ) : (
+                            <Send className="h-5 w-5" />
+                          )}
+                        </motion.button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Upload New Document */}
-              <div className="text-center">
-                <button
-                  onClick={() => {
-                    setAnalysisComplete(false)
-                    setUploadedFile(null)
-                    setChatMessages([])
-                  }}
-                  className="px-6 py-3 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
-                >
-                  Analyze Another Document
-                </button>
-              </div>
+              {/* Upload New Document - CTA Style */}
+              <motion.div 
+                className="text-center"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 1.4 }}
+              >
+                <div className="relative group inline-block">
+                  <div className="absolute inset-0 bg-gradient-to-r from-violet-600/50 to-purple-600/50 rounded-2xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
+                  <motion.button
+                    onClick={() => {
+                      setAnalysisComplete(false)
+                      setUploadedFile(null)
+                      setChatMessages([])
+                    }}
+                    className="relative px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-2xl font-semibold text-lg hover:from-violet-700 hover:to-purple-700 transition-all duration-300 shadow-2xl border border-violet-500/30"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Upload className="h-6 w-6" />
+                      Analyze Another Document
+                    </div>
+                  </motion.button>
+                </div>
+                <p className="text-gray-400 mt-4 text-sm">
+                  Ready to analyze another legal document? Upload it to get started.
+                </p>
+              </motion.div>
             </motion.div>
           )}
         </div>
