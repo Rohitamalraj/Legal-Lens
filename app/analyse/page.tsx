@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Upload, FileText, MessageSquare, Send, User, Bot, Globe, Volume2, Loader2, VolumeX, Square } from 'lucide-react'
+import { Upload, FileText, MessageSquare, Send, User, Bot, Globe, Volume2, Loader2, VolumeX, Square, Clock, AlertTriangle, AlertCircle, CheckCircle, BookOpen, Shield, Search } from 'lucide-react'
 import { apiService, type DocumentAnalysis } from '@/lib/api'
 import { debugDocumentData } from '@/lib/debug-utils'
 import { LanguageSelector, TranslationStatus } from '@/components/language-selector'
@@ -847,10 +847,16 @@ export default function AnalysePage() {
                     </div>
                   )}
                 </div>
-              </motion.div>
+              </div>
 
               {/* Risk Analysis */}
-              <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
+              <motion.div
+                className="relative group"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.8 }}
+              >
+                <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold flex items-center gap-3">
                     <FileText className="h-6 w-6 text-violet-600" />
@@ -953,23 +959,23 @@ export default function AnalysePage() {
                                       {risk.severity}
                                     </span>
                                   )}
+                                  
+                                  <p className="text-gray-300 leading-relaxed mb-4">{risk.description}</p>
+                                  
+                                  {risk.recommendation && (
+                                    <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-4">
+                                      <p className="text-sm text-blue-300 flex items-start gap-2">
+                                        <span className="text-blue-400 mt-0.5">💡</span>
+                                        <span className="font-medium">Recommendation:</span>
+                                      </p>
+                                      <p className="text-sm text-blue-200 mt-1 ml-6">{risk.recommendation}</p>
+                                    </div>
+                                  )}
                                 </div>
-                                
-                                <p className="text-gray-300 leading-relaxed mb-4">{risk.description}</p>
-                                
-                                {risk.recommendation && (
-                                  <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-4">
-                                    <p className="text-sm text-blue-300 flex items-start gap-2">
-                                      <span className="text-blue-400 mt-0.5">💡</span>
-                                      <span className="font-medium">Recommendation:</span>
-                                    </p>
-                                    <p className="text-sm text-blue-200 mt-1 ml-6">{risk.recommendation}</p>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </motion.div>
-                        ))}
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1014,19 +1020,25 @@ export default function AnalysePage() {
                           {(translatedData?.recommendations || documentData?.analysis?.recommendations || []).map((rec: any, index: number) => (
                             <li key={index}>
                               {typeof rec === 'string' ? rec : rec.description || rec.recommendation || JSON.stringify(rec)}
-                            </p>
-                          </motion.div>
-                        ))}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     </div>
                   )}
                 </div>
+              </div>
               </motion.div>
 
               {/* Obligations and Rights */}
               {(((translatedData?.obligations || documentData?.analysis?.obligations) && Array.isArray(translatedData?.obligations || documentData?.analysis?.obligations) && (translatedData?.obligations || documentData?.analysis?.obligations).length > 0) || 
                 ((translatedData?.rights || documentData?.analysis?.rights) && Array.isArray(translatedData?.rights || documentData?.analysis?.rights) && (translatedData?.rights || documentData?.analysis?.rights).length > 0)) && (
-                <div className="grid md:grid-cols-2 gap-6">
+                <motion.div
+                  className="grid md:grid-cols-2 gap-6"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 1.0 }}
+                >
                   {/* Obligations */}
                   {(translatedData?.obligations || documentData?.analysis?.obligations) && Array.isArray(translatedData?.obligations || documentData?.analysis?.obligations) && (translatedData?.obligations || documentData?.analysis?.obligations).length > 0 && (
                     <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
@@ -1096,61 +1108,9 @@ export default function AnalysePage() {
                               </div>
                             )}
                           </div>
-                          <div>
-                            <h3 className="text-2xl font-bold text-white">Your Obligations</h3>
-                            <p className="text-gray-400">Legal responsibilities and duties</p>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-4">
-                          {documentData.analysis.obligations.map((obligation: any, index: number) => (
-                            <motion.div
-                              key={index}
-                              className="bg-gray-800/50 border border-gray-700/50 rounded-xl hover:border-orange-500/50 transition-all duration-300 overflow-hidden"
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.4, delay: 0.1 * index }}
-                            >
-                              {typeof obligation === 'string' ? (
-                                <div className="p-6">
-                                  <div className="flex items-start gap-4">
-                                    <div className="flex-shrink-0 w-8 h-8 bg-orange-600/20 rounded-full flex items-center justify-center mt-1">
-                                      <span className="text-orange-400 font-bold text-sm">{index + 1}</span>
-                                    </div>
-                                    <p className="text-gray-100 leading-relaxed">{obligation}</p>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="p-6">
-                                  <div className="flex items-start gap-4">
-                                    <div className="flex-shrink-0 w-8 h-8 bg-orange-600/20 rounded-full flex items-center justify-center mt-1">
-                                      <span className="text-orange-400 font-bold text-sm">{index + 1}</span>
-                                    </div>
-                                    <div className="flex-1">
-                                      {obligation.party && (
-                                        <h5 className="font-bold text-white text-lg mb-2 flex items-center gap-2">
-                                          <span className="text-orange-400">⚖️</span>
-                                          {obligation.party}
-                                        </h5>
-                                      )}
-                                      <p className="text-gray-300 leading-relaxed mb-3">{obligation.description}</p>
-                                      {obligation.deadline && (
-                                        <div className="inline-flex items-center gap-2 px-3 py-2 bg-orange-900/20 border border-orange-700/30 rounded-lg">
-                                          <Clock className="h-4 w-4 text-orange-400" />
-                                          <span className="text-orange-300 text-sm font-medium">
-                                            Deadline: {obligation.deadline}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </motion.div>
-                          ))}
-                        </div>
+                        ))}
                       </div>
-                    </motion.div>
+                    </div>
                   )}
                   
                   {/* Rights */}
@@ -1219,55 +1179,11 @@ export default function AnalysePage() {
                               </div>
                             )}
                           </div>
-                          <div>
-                            <h3 className="text-2xl font-bold text-white">Your Rights</h3>
-                            <p className="text-gray-400">Legal protections and entitlements</p>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-4">
-                          {documentData.analysis.rights.map((right: any, index: number) => (
-                            <motion.div
-                              key={index}
-                              className="bg-gray-800/50 border border-gray-700/50 rounded-xl hover:border-green-500/50 transition-all duration-300 overflow-hidden"
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.4, delay: 0.1 * index }}
-                            >
-                              {typeof right === 'string' ? (
-                                <div className="p-6">
-                                  <div className="flex items-start gap-4">
-                                    <div className="flex-shrink-0 w-8 h-8 bg-green-600/20 rounded-full flex items-center justify-center mt-1">
-                                      <span className="text-green-400 font-bold text-sm">{index + 1}</span>
-                                    </div>
-                                    <p className="text-gray-100 leading-relaxed">{right}</p>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="p-6">
-                                  <div className="flex items-start gap-4">
-                                    <div className="flex-shrink-0 w-8 h-8 bg-green-600/20 rounded-full flex items-center justify-center mt-1">
-                                      <span className="text-green-400 font-bold text-sm">{index + 1}</span>
-                                    </div>
-                                    <div className="flex-1">
-                                      {right.party && (
-                                        <h5 className="font-bold text-white text-lg mb-2 flex items-center gap-2">
-                                          <span className="text-green-400">🛡️</span>
-                                          {right.party}
-                                        </h5>
-                                      )}
-                                      <p className="text-gray-300 leading-relaxed">{right.description}</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </motion.div>
-                          ))}
-                        </div>
+                        ))}
                       </div>
-                    </motion.div>
+                    </div>
                   )}
-                </div>
+                </motion.div>
               )}
 
               {/* Q&A Section - Premium Chat Interface */}
