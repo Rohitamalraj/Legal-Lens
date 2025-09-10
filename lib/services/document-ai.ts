@@ -110,25 +110,40 @@ export class DocumentAIService {
    */
   private analyzeLegalContent(text: string, entities: Array<{ type: string; mentionText: string; confidence: number }>): { isLegal: boolean; documentType: string } {
     const legalKeywords = [
-      'agreement', 'contract', 'lease', 'terms and conditions', 'privacy policy',
-      'liability', 'indemnification', 'jurisdiction', 'governing law',
-      'whereas', 'hereby', 'herein', 'therein', 'party', 'parties',
-      'covenant', 'warrant', 'represent', 'breach', 'termination',
-      'intellectual property', 'confidentiality', 'non-disclosure',
-      'license', 'copyright', 'trademark', 'patent',
-      'arbitration', 'mediation', 'dispute resolution',
-      'force majeure', 'amendment', 'modification', 'assignment'
-    ];
+  'agreement', 'contract', 'lease', 'terms and conditions', 'privacy policy',
+  'liability', 'indemnification', 'jurisdiction', 'governing law',
+  'whereas', 'hereby', 'herein', 'therein', 'party', 'parties',
+  'covenant', 'warrant', 'represent', 'breach', 'termination',
+  'intellectual property', 'confidentiality', 'non-disclosure',
+  'license', 'copyright', 'trademark', 'patent',
+  'arbitration', 'mediation', 'dispute resolution',
+  'force majeure', 'amendment', 'modification', 'assignment',
+  'partnership', 'partner', 'partners', 'profit sharing', 'capital contribution',
+  'services', 'service provider', 'client', 'deliverables', 'scope of work', 'fees',
+  'loan', 'borrower', 'lender', 'interest rate', 'repayment', 'principal',
+  'franchise', 'franchisor', 'franchisee', 'territory', 'royalty',
+  'settlement', 'release', 'claims', 'waiver',
+  'shares', 'shareholder', 'stock', 'equity', 'voting rights', 'dividends',
+  'memorandum', 'understanding', 'intent', 'collaboration'
+];
 
-    const documentTypes = [
-      { keywords: ['lease', 'rent', 'tenant', 'landlord', 'premises'], type: 'LEASE_AGREEMENT' },
-      { keywords: ['employment', 'employee', 'employer', 'work', 'salary'], type: 'EMPLOYMENT_CONTRACT' },
-      { keywords: ['privacy', 'data', 'personal information', 'cookies'], type: 'PRIVACY_POLICY' },
-      { keywords: ['terms of service', 'terms of use', 'user agreement'], type: 'TERMS_OF_SERVICE' },
-      { keywords: ['non-disclosure', 'confidential', 'proprietary'], type: 'NDA' },
-      { keywords: ['purchase', 'sale', 'buyer', 'seller', 'goods'], type: 'PURCHASE_AGREEMENT' },
-      { keywords: ['license', 'software', 'intellectual property'], type: 'LICENSE_AGREEMENT' }
-    ];
+const documentTypes = [
+  { keywords: ['lease', 'rent', 'tenant', 'landlord', 'premises'], type: 'LEASE_AGREEMENT' },
+  { keywords: ['employment', 'employee', 'employer', 'work', 'salary'], type: 'EMPLOYMENT_CONTRACT' },
+  { keywords: ['privacy', 'data', 'personal information', 'cookies'], type: 'PRIVACY_POLICY' },
+  { keywords: ['terms of service', 'terms of use', 'user agreement'], type: 'TERMS_OF_SERVICE' },
+  { keywords: ['non-disclosure', 'confidential', 'proprietary'], type: 'NDA' },
+  { keywords: ['purchase', 'sale', 'buyer', 'seller', 'goods'], type: 'PURCHASE_AGREEMENT' },
+  { keywords: ['license', 'software', 'intellectual property'], type: 'LICENSE_AGREEMENT' },
+  { keywords: ['partnership', 'partner', 'partners', 'profit sharing', 'capital contribution'], type: 'PARTNERSHIP_AGREEMENT' },
+  { keywords: ['services', 'service provider', 'client', 'deliverables', 'scope of work', 'fees'], type: 'SERVICE_AGREEMENT' },
+  { keywords: ['loan', 'borrower', 'lender', 'interest rate', 'repayment', 'principal'], type: 'LOAN_AGREEMENT' },
+  { keywords: ['franchise', 'franchisor', 'franchisee', 'territory', 'royalty'], type: 'FRANCHISE_AGREEMENT' },
+  { keywords: ['settlement', 'release', 'claims', 'waiver'], type: 'SETTLEMENT_AGREEMENT' },
+  { keywords: ['shares', 'shareholder', 'stock', 'equity', 'voting rights', 'dividends'], type: 'SHAREHOLDER_AGREEMENT' },
+  { keywords: ['memorandum', 'understanding', 'intent', 'collaboration'], type: 'MOU' }
+];
+
 
     const textLower = text.toLowerCase();
     

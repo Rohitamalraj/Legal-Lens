@@ -159,20 +159,27 @@ console.log("Gemini AI response:", result.response?.candidates?.[0]?.content?.pa
    * Build comprehensive analysis prompt
    */
   private buildAnalysisPrompt(documentText: string, documentType: string): string {
-    return `You are an expert legal analyst. Analyze the following ${documentType} document and provide a comprehensive analysis in JSON format.
+    return `You are an expert legal analyst. Analyze the following ${documentType} document and provide a comprehensive analysis.
 
 Document Text:
 ${documentText}
 
-Provide your analysis in the following JSON structure:
+CRITICAL INSTRUCTIONS:
+- Return ONLY valid JSON with no additional text, explanations, or markdown
+- Use double quotes for all strings
+- Do not include trailing commas
+- Escape any quotes within string values
+- Ensure all brackets and braces are properly closed
+
+Provide your analysis in this EXACT JSON structure:
 {
   "summary": "A clear, concise summary in plain English (2-3 paragraphs)",
-  "riskScore": "Risk score from 0-100",
+  "riskScore": 50,
   "keyRisks": [
     {
       "category": "Risk category",
       "description": "Risk description",
-      "severity": "LOW|MEDIUM|HIGH|CRITICAL",
+      "severity": "LOW",
       "recommendation": "How to mitigate this risk"
     }
   ],
@@ -180,7 +187,7 @@ Provide your analysis in the following JSON structure:
     {
       "party": "Who has the obligation",
       "description": "What they must do",
-      "deadline": "When (if specified)"
+      "deadline": "When if specified or null"
     }
   ],
   "rights": [
@@ -193,20 +200,20 @@ Provide your analysis in the following JSON structure:
     {
       "term": "Important term or clause",
       "definition": "What it means in plain English",
-      "importance": "LOW|MEDIUM|HIGH"
+      "importance": "LOW"
     }
   ],
   "recommendations": ["List of actionable recommendations"]
 }
 
-Focus on:
-1. Identifying potential risks and liabilities
-2. Explaining complex legal terms in plain English
-3. Highlighting important deadlines and obligations
-4. Providing practical recommendations
-5. Being thorough but accessible to non-lawyers
+REQUIREMENTS:
+1. riskScore must be a number from 0-100
+2. severity must be exactly one of: "LOW", "MEDIUM", "HIGH", "CRITICAL"
+3. importance must be exactly one of: "LOW", "MEDIUM", "HIGH"
+4. All array fields must be arrays (use empty arrays [] if no data)
+5. Return ONLY the JSON object, no explanatory text before or after
 
-Ensure your response is valid JSON without any markdown formatting.`;
+Focus on identifying risks, explaining legal terms, highlighting obligations, and providing practical recommendations for non-lawyers.`;
   }
 
   /**
@@ -260,13 +267,25 @@ Answer:`;
    */
   private parseAnalysisResult(analysisText: string): LegalAnalysisResult {
     try {
+      console.log('=== PARSING ANALYSIS RESULT ===');
+      console.log('Raw analysis text length:', analysisText.length);
+      console.log('Raw analysis preview:', analysisText.substring(0, 500));
+      
       // Clean up the response to extract JSON
       let jsonText = analysisText.trim();
       
       // Remove markdown code blocks if present
       jsonText = jsonText.replace(/```json\s*/, '').replace(/```\s*$/, '');
+      jsonText = jsonText.replace(/```\s*/, '');
+      
+      // More aggressive JSON cleaning
+      jsonText = this.cleanJsonString(jsonText);
+      
+      console.log('Cleaned JSON text preview:', jsonText.substring(0, 500));
       
       const parsed = JSON.parse(jsonText);
+      
+      console.log('Successfully parsed JSON structure:', Object.keys(parsed));
       
       // Validate and set defaults
       return {
@@ -281,10 +300,146 @@ Answer:`;
       
     } catch (error) {
       console.error('Failed to parse analysis result:', error);
+      console.error('Error details:', error instanceof Error ? error.message : error);
+      
+      // Try alternative parsing methods
+      const alternativeResult = this.tryAlternativeParsing(analysisText);
+      if (alternativeResult) {
+        return alternativeResult;
+      }
       
       // Fallback: try to extract information manually
       return this.fallbackAnalysis(analysisText);
     }
+  }
+
+  /**
+   * Clean JSON string to fix common formatting issues
+   */
+  private cleanJsonString(jsonText: string): string {
+    // Remove any text before the first {
+    const firstBrace = jsonText.indexOf('{');
+    if (firstBrace > 0) {
+      jsonText = jsonText.substring(firstBrace);
+    }
+    
+    // Remove any text after the last }
+    const lastBrace = jsonText.lastIndexOf('}');
+    if (lastBrace >= 0 && lastBrace < jsonText.length - 1) {
+      jsonText = jsonText.substring(0, lastBrace + 1);
+    }
+    
+    // Fix common JSON issues
+    jsonText = jsonText
+      // Remove markdown remnants
+      .replace(/```json|```/g, '')
+      // Replace single quotes with double quotes for property names
+      .replace(/(\s*)'([^']+)'(\s*):/g, '$1"$2"$3:')
+      // Replace single quotes with double quotes for string values (be careful with apostrophes)
+      .replace(/:\s*'([^'\\]*(?:\\.[^'\\]*)*)'(\s*[,}\]])/g, ': "$1"$2')
+      // Remove trailing commas before closing brackets or braces
+      .replace(/,(\s*[}\]])/g, '$1')
+      // Fix duplicate commas
+      .replace(/,,+/g, ',')
+      // Fix missing commas between objects in arrays
+      .replace(/}\s*{/g, '}, {')
+      // Fix missing commas between array elements
+      .replace(/]\s*\[/g, '], [')
+      // Ensure proper spacing around colons
+      .replace(/"\s*:\s*/g, '": ')
+      // Fix potential issues with line breaks in strings
+      .replace(/"\s*\n\s*"/g, '" "')
+      // Remove any control characters that might break JSON
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+    
+    return jsonText.trim();
+  }
+
+  /**
+   * Try alternative parsing methods
+   */
+  private tryAlternativeParsing(analysisText: string): LegalAnalysisResult | null {
+    try {
+      // Method 1: Try to find JSON object within the text
+      const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const potentialJson = this.cleanJsonString(jsonMatch[0]);
+        try {
+          const parsed = JSON.parse(potentialJson);
+          console.log('Successfully parsed JSON from match');
+          return {
+            summary: parsed.summary || 'No summary available',
+            riskScore: Math.min(Math.max(parsed.riskScore || 0, 0), 100),
+            keyRisks: Array.isArray(parsed.keyRisks) ? parsed.keyRisks : [],
+            obligations: Array.isArray(parsed.obligations) ? parsed.obligations : [],
+            rights: Array.isArray(parsed.rights) ? parsed.rights : [],
+            keyTerms: Array.isArray(parsed.keyTerms) ? parsed.keyTerms : [],
+            recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : []
+          };
+        } catch (innerError) {
+          console.log('JSON match parsing failed:', innerError instanceof Error ? innerError.message : innerError);
+        }
+      }
+      
+      // Method 2: Try manual extraction using regex patterns
+      const extractedData = this.extractDataManually(analysisText);
+      if (extractedData) {
+        console.log('Successfully extracted data manually');
+        return extractedData;
+      }
+    } catch (error) {
+      console.log('Alternative parsing also failed:', error instanceof Error ? error.message : error);
+    }
+    
+    return null;
+  }
+
+  /**
+   * Extract data manually using regex patterns
+   */
+  private extractDataManually(text: string): LegalAnalysisResult | null {
+    try {
+      const result: any = {};
+      
+      // Extract summary
+      const summaryMatch = text.match(/"summary"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/);
+      if (summaryMatch) {
+        result.summary = summaryMatch[1].replace(/\\"/g, '"');
+      }
+      
+      // Extract risk score
+      const riskScoreMatch = text.match(/"riskScore"\s*:\s*(\d+)/);
+      if (riskScoreMatch) {
+        result.riskScore = parseInt(riskScoreMatch[1]);
+      }
+      
+      // Extract arrays - this is more complex, but let's try basic extraction
+      const keyRisksMatch = text.match(/"keyRisks"\s*:\s*\[([\s\S]*?)\]/);
+      if (keyRisksMatch) {
+        try {
+          result.keyRisks = JSON.parse(`[${keyRisksMatch[1]}]`);
+        } catch {
+          result.keyRisks = [];
+        }
+      }
+      
+      // If we got at least summary or risk score, return partial result
+      if (result.summary || result.riskScore) {
+        return {
+          summary: result.summary || 'Analysis completed',
+          riskScore: result.riskScore || 50,
+          keyRisks: result.keyRisks || [],
+          obligations: result.obligations || [],
+          rights: result.rights || [],
+          keyTerms: result.keyTerms || [],
+          recommendations: result.recommendations || []
+        };
+      }
+    } catch (error) {
+      console.error('Manual extraction failed:', error);
+    }
+    
+    return null;
   }
 
   /**
