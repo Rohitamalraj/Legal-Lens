@@ -3,8 +3,6 @@
 import type React from "react"
 import { motion, useInView } from "framer-motion"
 import { Suspense, useRef, useState } from "react"
-import { geist } from "@/lib/fonts"
-import { cn } from "@/lib/utils"
 import { 
   FileText, 
   Search, 
@@ -73,10 +71,7 @@ export default function LegalLensFeatures() {
         {/* Header */}
         <div className="text-center mb-16">
           <h2
-            className={cn(
-              "via-foreground mb-8 bg-gradient-to-b from-zinc-800 to-zinc-700 bg-clip-text text-center text-4xl font-semibold tracking-tighter text-transparent md:text-[54px] md:leading-[60px]",
-              geist.className,
-            )}
+            className="via-foreground mb-8 bg-gradient-to-b from-zinc-800 to-zinc-700 bg-clip-text text-center text-4xl font-semibold tracking-tighter text-transparent md:text-[54px] md:leading-[60px]"
           >
             Why Legal Lens?
           </h2>

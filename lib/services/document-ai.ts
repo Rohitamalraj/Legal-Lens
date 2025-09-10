@@ -30,10 +30,19 @@ export class DocumentAIService {
     this.location = process.env.DOCUMENT_AI_LOCATION || 'us';
     this.processorId = process.env.DOCUMENT_AI_PROCESSOR_ID || '';
 
-    this.client = new DocumentProcessorServiceClient({
-      credentials: this.cloudConfig.getCredentials(),
-      projectId: this.projectId
-    });
+    // Initialize client with proper authentication
+    const credentials = this.cloudConfig.getCredentials();
+    if (credentials) {
+      this.client = new DocumentProcessorServiceClient({
+        credentials: credentials,
+        projectId: this.projectId
+      });
+    } else {
+      // Use Application Default Credentials
+      this.client = new DocumentProcessorServiceClient({
+        projectId: this.projectId
+      });
+    }
   }
 
   /**

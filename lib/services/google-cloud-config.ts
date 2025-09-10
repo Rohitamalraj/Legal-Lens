@@ -11,13 +11,26 @@ export class GoogleCloudConfig {
 
   private constructor() {
     this.initializeCredentials()
-    this.auth = new GoogleAuth({
-      credentials: this.credentials,
-      scopes: [
-        'https://www.googleapis.com/auth/cloud-platform',
-        'https://www.googleapis.com/auth/cloud-platform.read-only',
-      ],
-    })
+    
+    // If no specific credentials are set, use Application Default Credentials
+    if (!this.credentials) {
+      console.log('Using Application Default Credentials (ADC)')
+      this.auth = new GoogleAuth({
+        scopes: [
+          'https://www.googleapis.com/auth/cloud-platform',
+          'https://www.googleapis.com/auth/cloud-platform.read-only',
+        ],
+      })
+    } else {
+      console.log('Using explicit credentials from environment')
+      this.auth = new GoogleAuth({
+        credentials: this.credentials,
+        scopes: [
+          'https://www.googleapis.com/auth/cloud-platform',
+          'https://www.googleapis.com/auth/cloud-platform.read-only',
+        ],
+      })
+    }
   }
 
   public static getInstance(): GoogleCloudConfig {

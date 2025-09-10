@@ -2,9 +2,11 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Upload, FileText, MessageSquare, Send, User, Bot, AlertTriangle, AlertCircle, CheckCircle, BookOpen, Shield, Clock, Search } from 'lucide-react'
+import { Upload, FileText, MessageSquare, Send, User, Bot, Globe, Volume2, Loader2, VolumeX, Square } from 'lucide-react'
 import { apiService, type DocumentAnalysis } from '@/lib/api'
 import { debugDocumentData } from '@/lib/debug-utils'
+import { LanguageSelector, TranslationStatus } from '@/components/language-selector'
+import { SupportedLanguageCode, SUPPORTED_LANGUAGES } from '@/lib/constants/translation'
 
 export default function AnalysePage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -18,7 +20,247 @@ export default function AnalysePage() {
   const [mobileNavVisible, setMobileNavVisible] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [isSendingMessage, setIsSendingMessage] = useState(false)
+  
+  // Translation state
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguageCode>('en')
+  const [translatedData, setTranslatedData] = useState<any>(null)
+  const [isTranslating, setIsTranslating] = useState(false)
+  const [translationError, setTranslationError] = useState<string | null>(null)
+  
+  // Text-to-Speech state
+  const [isReading, setIsReading] = useState(false)
+  const [currentlyReading, setCurrentlyReading] = useState<string | null>(null)
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null)
+  const [isLoadingTTS, setIsLoadingTTS] = useState(false)
+  
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Stop speech when language changes
+  useEffect(() => {
+    if (currentAudio) {
+      currentAudio.pause()
+      setCurrentAudio(null)
+    }
+    window.speechSynthesis.cancel()
+    setIsReading(false)
+    setCurrentlyReading(null)
+  }, [currentLanguage])
+
+  // Helper function to get translated UI labels
+  const getTranslatedLabel = (key: string, fallback: string = key) => {
+    if (currentLanguage === 'en' || !translatedData?.uiLabels) {
+      return fallback
+    }
+    return translatedData.uiLabels[key] || fallback
+  }
+
+  // Google Cloud Text-to-Speech functionality (Optimized for Speed)
+  const readText = async (text: string, sectionId: string) => {
+    // Stop any current speech immediately
+    if (currentAudio) {
+      currentAudio.pause()
+      setCurrentAudio(null)
+    }
+    window.speechSynthesis.cancel()
+
+    if (currentlyReading === sectionId) {
+      setIsReading(false)
+      setCurrentlyReading(null)
+      setIsLoadingTTS(false)
+      return
+    }
+
+    // Show immediate feedback
+    setIsLoadingTTS(true)
+    setCurrentlyReading(sectionId)
+
+    try {
+      // Convert language code for Google TTS
+      const speechLang = currentLanguage === 'en' ? 'en-US' : 
+                        currentLanguage === 'es' ? 'es-ES' :
+                        currentLanguage === 'fr' ? 'fr-FR' :
+                        currentLanguage === 'de' ? 'de-DE' :
+                        currentLanguage === 'it' ? 'it-IT' :
+                        currentLanguage === 'pt' ? 'pt-PT' :
+                        currentLanguage === 'ru' ? 'ru-RU' :
+                        currentLanguage === 'zh' ? 'zh-CN' :
+                        currentLanguage === 'ja' ? 'ja-JP' :
+                        currentLanguage === 'ko' ? 'ko-KR' :
+                        currentLanguage === 'ar' ? 'ar-XA' :
+                        currentLanguage === 'hi' ? 'hi-IN' :
+                        currentLanguage === 'nl' ? 'nl-NL' :
+                        currentLanguage === 'sv' ? 'sv-SE' :
+                        currentLanguage === 'da' ? 'da-DK' :
+                        currentLanguage === 'no' ? 'no-NO' :
+                        currentLanguage === 'fi' ? 'fi-FI' :
+                        currentLanguage === 'pl' ? 'pl-PL' :
+                        currentLanguage === 'cs' ? 'cs-CZ' :
+                        currentLanguage === 'hu' ? 'hu-HU' : 'en-US'
+
+      // Call Google Cloud TTS API with timeout for faster response
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => {
+        console.log('TTS request timeout - aborting...')
+        controller.abort()
+      }, 10000) // 10 second timeout
+
+      const response = await fetch('/api/tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: text.substring(0, 1000), // Limit text length for faster processing
+          language: speechLang,
+          voiceGender: 'FEMALE'
+        }),
+        signal: controller.signal
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        throw new Error('TTS API request failed')
+      }
+
+      const result = await response.json()
+      
+      if (result.error) {
+        throw new Error(result.error)
+      }
+
+      // Stop loading, start playing
+      setIsLoadingTTS(false)
+      setIsReading(true)
+
+      // Create audio from base64 data
+      const audioData = `data:audio/mpeg;base64,${result.audioContent}`
+      const audio = new Audio(audioData)
+      
+      setCurrentAudio(audio)
+
+      audio.onended = () => {
+        setIsReading(false)
+        setCurrentlyReading(null)
+        setCurrentAudio(null)
+      }
+
+      audio.onerror = () => {
+        setIsReading(false)
+        setCurrentlyReading(null)
+        setCurrentAudio(null)
+        setIsLoadingTTS(false)
+        console.error('Audio playback error')
+      }
+
+      // Play the audio immediately
+      await audio.play()
+      
+    } catch (error) {
+      console.error('Google TTS Error:', error)
+      setIsLoadingTTS(false)
+      setIsReading(false)
+      setCurrentlyReading(null)
+      
+      // Handle AbortError specifically
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('TTS request was aborted (timeout or user cancellation)')
+        return
+      }
+      
+      // Quick fallback to browser TTS for instant response
+      console.log('Using browser TTS fallback for instant response...')
+      const fallbackLang = currentLanguage === 'en' ? 'en-US' : 
+                          currentLanguage === 'es' ? 'es-ES' :
+                          currentLanguage === 'fr' ? 'fr-FR' :
+                          currentLanguage === 'de' ? 'de-DE' :
+                          currentLanguage === 'it' ? 'it-IT' :
+                          currentLanguage === 'pt' ? 'pt-PT' :
+                          currentLanguage === 'ru' ? 'ru-RU' :
+                          currentLanguage === 'zh' ? 'zh-CN' :
+                          currentLanguage === 'ja' ? 'ja-JP' :
+                          currentLanguage === 'ko' ? 'ko-KR' :
+                          currentLanguage === 'ar' ? 'ar-SA' :
+                          currentLanguage === 'hi' ? 'hi-IN' :
+                          currentLanguage === 'nl' ? 'nl-NL' :
+                          currentLanguage === 'sv' ? 'sv-SE' :
+                          currentLanguage === 'da' ? 'da-DK' :
+                          currentLanguage === 'no' ? 'no-NO' :
+                          currentLanguage === 'fi' ? 'fi-FI' :
+                          currentLanguage === 'pl' ? 'pl-PL' :
+                          currentLanguage === 'cs' ? 'cs-CZ' :
+                          currentLanguage === 'hu' ? 'hu-HU' : 'en-US'
+      
+      const utterance = new SpeechSynthesisUtterance(text.substring(0, 500)) // Shorter for speed
+      utterance.lang = fallbackLang
+      utterance.rate = 1.1 // Faster speech
+      utterance.pitch = 1
+      
+      utterance.onend = () => {
+        setIsReading(false)
+        setCurrentlyReading(null)
+      }
+      
+      utterance.onerror = () => {
+        setIsReading(false)
+        setCurrentlyReading(null)
+      }
+
+      setIsReading(true)
+      window.speechSynthesis.speak(utterance)
+    }
+  }
+
+  // Get section content for reading
+  const getSectionContent = (sectionType: string) => {
+    if (!documentData) return ''
+    
+    switch (sectionType) {
+      case 'summary':
+        const summaryTitle = getTranslatedLabel('Legal Lens Summary', 'Legal Lens Summary')
+        const summaryContent = translatedData?.summary || documentData.analysis.summary || ''
+        return `${summaryTitle}. ${summaryContent}`
+      
+      case 'keyTerms':
+        const keyTermsTitle = getTranslatedLabel('Key Terms', 'Key Terms')
+        const keyTerms = translatedData?.keyPoints || documentData.analysis.keyTerms || []
+        const keyTermsText = Array.isArray(keyTerms) ? 
+          keyTerms.map(term => typeof term === 'string' ? term : `${term.term}: ${term.definition}`).join('. ') : ''
+        return `${keyTermsTitle}. ${keyTermsText}`
+      
+      case 'risks':
+        const risksTitle = getTranslatedLabel('Risk Analysis', 'Risk Analysis')
+        const riskScore = `${getTranslatedLabel('Risk Score', 'Risk Score')} ${documentData.analysis.riskScore} out of 100`
+        const keyRisks = translatedData?.keyRisks || documentData.analysis.keyRisks || []
+        const risksText = Array.isArray(keyRisks) ? 
+          keyRisks.map(risk => typeof risk === 'string' ? risk : risk.description || risk.category || '').join('. ') : ''
+        return `${risksTitle}. ${riskScore}. ${getTranslatedLabel('Key Risks', 'Key Risks')}. ${risksText}`
+      
+      case 'recommendations':
+        const recTitle = getTranslatedLabel('Recommendations', 'Recommendations')
+        const recommendations = translatedData?.recommendations || documentData.analysis.recommendations || []
+        const recText = Array.isArray(recommendations) ? 
+          recommendations.map(rec => typeof rec === 'string' ? rec : rec.description || rec.recommendation || '').join('. ') : ''
+        return `${recTitle}. ${recText}`
+      
+      case 'obligations':
+        const oblTitle = getTranslatedLabel('Your Obligations', 'Your Obligations')
+        const obligations = translatedData?.obligations || documentData.analysis.obligations || []
+        const oblText = Array.isArray(obligations) ? 
+          obligations.map(obl => typeof obl === 'string' ? obl : obl.description || obl.obligation || '').join('. ') : ''
+        return `${oblTitle}. ${oblText}`
+      
+      case 'rights':
+        const rightsTitle = getTranslatedLabel('Your Rights', 'Your Rights')
+        const rights = translatedData?.rights || documentData.analysis.rights || []
+        const rightsText = Array.isArray(rights) ? 
+          rights.map(right => typeof right === 'string' ? right : right.description || right.right || '').join('. ') : ''
+        return `${rightsTitle}. ${rightsText}`
+      
+      default:
+        return ''
+    }
+  }
 
   const navigateToSection = (sectionId: string) => {
     setMobileNavVisible(false)
@@ -185,6 +427,84 @@ export default function AnalysePage() {
     }
   }
 
+  // Translation function
+  const handleLanguageChange = async (language: SupportedLanguageCode) => {
+    if (!documentData || language === currentLanguage) return
+
+    if (language === 'en') {
+      // Reset to original language
+      setTranslatedData(null)
+      setCurrentLanguage(language)
+      setTranslationError(null)
+      return
+    }
+
+    setIsTranslating(true)
+    setTranslationError(null)
+
+    try {
+      // Prepare data for translation including UI labels
+      const dataToTranslate = {
+        summary: documentData.analysis.summary || '',
+        keyPoints: documentData.analysis.keyTerms?.map((term: any) => 
+          typeof term === 'string' ? term : `${term.term}: ${term.definition}`
+        ) || [],
+        riskLevel: `Risk Score: ${documentData.analysis.riskScore}/100`,
+        recommendations: documentData.analysis.recommendations?.map((rec: any) => 
+          typeof rec === 'string' ? rec : rec.description || rec.recommendation || ''
+        ) || [],
+        keyRisks: documentData.analysis.keyRisks?.map((risk: any) => 
+          typeof risk === 'string' ? risk : risk.description || risk.category || ''
+        ) || [],
+        obligations: documentData.analysis.obligations?.map((obl: any) => 
+          typeof obl === 'string' ? obl : obl.description || obl.obligation || ''
+        ) || [],
+        rights: documentData.analysis.rights?.map((right: any) => 
+          typeof right === 'string' ? right : right.description || right.right || ''
+        ) || [],
+        // UI Labels to translate
+        uiLabels: {
+          'Legal Lens Summary': '🧠 Legal Lens Summary',
+          'Key Terms': 'Key Terms:',
+          'Risk Analysis': '⚠️ Risk Analysis', 
+          'Risk Score': 'Risk Score:',
+          'Key Risks': 'Key Risks:',
+          'Recommendations': 'Recommendations:',
+          'Your Obligations': '📋 Your Obligations',
+          'Your Rights': '✅ Your Rights'
+        }
+      }
+
+      // Use the API service method
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'translateSummary',
+          summary: dataToTranslate,
+          targetLanguage: language,
+          sourceLanguage: 'en',
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Translation failed')
+      }
+
+      const translationResult = await response.json()
+      setTranslatedData(translationResult)
+      setCurrentLanguage(language)
+    } catch (error) {
+      console.error('Translation error:', error)
+      const errorMessage = 'Failed to translate content. Please try again.'
+      setTranslationError(errorMessage)
+    } finally {
+      setIsTranslating(false)
+    }
+  }
+
   return (
     <div className="min-h-screen w-full bg-background text-foreground relative">
       {/* Background Elements */}
@@ -245,6 +565,17 @@ export default function AnalysePage() {
             >
               Analyse
             </a>
+            <LanguageSelector
+              currentLanguage={currentLanguage}
+              onLanguageChange={handleLanguageChange}
+              disabled={isTranslating || !documentData}
+            />
+            {isTranslating && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Translating...</span>
+              </div>
+            )}
           </nav>
           
           {/* Mobile Menu Button */}
@@ -277,6 +608,12 @@ export default function AnalysePage() {
               >
                 Analyse
               </a>
+              <div className="border-t pt-4">
+                <LanguageSelector
+                  currentLanguage={currentLanguage}
+                  onLanguageChange={handleLanguageChange}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -297,6 +634,28 @@ export default function AnalysePage() {
             <p className="text-xl text-muted-foreground">
               Upload your legal document and understand it in <span className="text-violet-600 font-semibold">plain English</span> - no more legal jargon!
             </p>
+            
+            {/* Translation Status Banner */}
+            {isTranslating && (
+              <div className="mt-6 mx-auto max-w-md bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center justify-center gap-2 text-blue-700">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm font-medium">
+                    Translating content to {SUPPORTED_LANGUAGES[currentLanguage as keyof typeof SUPPORTED_LANGUAGES]}...
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {translationError && (
+              <div className="mt-6 mx-auto max-w-md bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center justify-center gap-2 text-red-700">
+                  <span className="text-sm font-medium">
+                    Translation failed: {translationError}
+                  </span>
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* File Upload Section */}
@@ -353,6 +712,8 @@ export default function AnalysePage() {
                 onChange={handleFileChange}
                 accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.bmp,.tiff"
                 className="hidden"
+                aria-label="Select document file for analysis"
+                title="Choose a document file to analyze"
               />
             </motion.div>
           )}
@@ -365,194 +726,213 @@ export default function AnalysePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              {/* Document Overview Header */}
-              <motion.div
-                className="text-center mb-12"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-              >
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                  Analysis <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Complete</span>
-                </h2>
-                <p className="text-lg text-muted-foreground">
-                  Here's what we found in your document - broken down in plain English
-                </p>
-              </motion.div>
-
-              {/* Summary Section - Hero Style */}
-              <motion.div
-                className="relative group"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-blue-500/20 rounded-xl">
-                      <FileText className="h-8 w-8 text-blue-400" />
+              {/* Plain English Summary */}
+              <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold flex items-center gap-3">
+                    <FileText className="h-6 w-6 text-violet-600" />
+                    <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
+                      {getTranslatedLabel('Legal Lens Summary', '🧠 Legal Lens Summary')}
+                    </span>
+                  </h2>
+                  <button
+                    onClick={() => readText(getSectionContent('summary'), 'summary')}
+                    disabled={isTranslating || isLoadingTTS}
+                    className={`group relative overflow-hidden rounded-xl px-4 py-3 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg backdrop-blur-sm border ${
+                      currentlyReading === 'summary' 
+                        ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400 shadow-red-200' 
+                        : isLoadingTTS && currentlyReading === 'summary'
+                        ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400 shadow-yellow-200'
+                        : 'bg-blue-500/20 border-blue-400 text-white hover:bg-blue-500/30 focus:ring-blue-400 shadow-blue-200'
+                    }`}
+                    title={
+                      isLoadingTTS && currentlyReading === 'summary' ? 'Loading audio...' :
+                      currentlyReading === 'summary' ? 'Stop reading' : 'Listen to summary'
+                    }
+                  >
+                    <div className="flex items-center gap-2">
+                      {isLoadingTTS && currentlyReading === 'summary' ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : currentlyReading === 'summary' ? (
+                        <VolumeX className="h-5 w-5" />
+                      ) : (
+                        <Volume2 className="h-5 w-5" />
+                      )}
+                      <span className="text-sm font-medium">
+                        {isLoadingTTS && currentlyReading === 'summary' ? 'Loading...' :
+                         currentlyReading === 'summary' ? 'Stop' : 'Listen'}
+                      </span>
                     </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-white">Document Summary</h3>
-                      <p className="text-gray-400">AI-powered breakdown in plain English</p>
+                    {/* Animated background effect */}
+                    <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {(translatedData?.summary || documentData?.analysis?.summary) && (
+                    <div className="flex items-start gap-3 py-3">
+                      <span className="text-xl">📄</span>
+                      <div className="text-foreground text-lg">
+                        <p>{translatedData?.summary || documentData?.analysis?.summary}</p>
+                        {translatedData?.summary && currentLanguage !== 'en' && (
+                          <p className="text-sm text-muted-foreground mt-2 italic">
+                            Translated to {SUPPORTED_LANGUAGES[currentLanguage as keyof typeof SUPPORTED_LANGUAGES]}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  
-                  {documentData?.analysis.summary && (
-                    <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
-                      <p className="text-gray-100 text-lg leading-relaxed">{documentData.analysis.summary}</p>
+                  )}
+                  {(translatedData?.keyPoints || documentData?.analysis?.keyTerms) && Array.isArray(translatedData?.keyPoints || documentData?.analysis?.keyTerms) && (translatedData?.keyPoints || documentData?.analysis?.keyTerms).length > 0 && (
+                    <div className="flex items-start gap-3 py-3">
+                      <span className="text-xl">🔑</span>
+                      <div className="text-foreground text-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-semibold">{getTranslatedLabel('Key Terms', 'Key Terms:')}</p>
+                          <button
+                            onClick={() => readText(getSectionContent('keyTerms'), 'keyTerms')}
+                            disabled={isTranslating || isLoadingTTS}
+                            className={`group relative overflow-hidden rounded-lg px-3 py-2 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 shadow-md backdrop-blur-sm border ${
+                              currentlyReading === 'keyTerms' 
+                                ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400 shadow-red-200' 
+                                : isLoadingTTS && currentlyReading === 'keyTerms'
+                                ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400 shadow-yellow-200'
+                                : 'bg-blue-500/20 border-blue-400 text-white hover:bg-blue-500/30 focus:ring-blue-400 shadow-blue-200'
+                            }`}
+                            title={
+                              isLoadingTTS && currentlyReading === 'keyTerms' ? 'Loading audio...' :
+                              currentlyReading === 'keyTerms' ? 'Stop reading' : 'Listen to key terms'
+                            }
+                          >
+                            <div className="flex items-center gap-1">
+                              {isLoadingTTS && currentlyReading === 'keyTerms' ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : currentlyReading === 'keyTerms' ? (
+                                <VolumeX className="h-4 w-4" />
+                              ) : (
+                                <Volume2 className="h-4 w-4" />
+                              )}
+                              <span className="text-xs font-medium">
+                                {isLoadingTTS && currentlyReading === 'keyTerms' ? 'Loading...' :
+                                 currentlyReading === 'keyTerms' ? 'Stop' : 'Listen'}
+                              </span>
+                            </div>
+                            <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                          </button>
+                        </div>
+                        <div className="space-y-3">
+                          {(translatedData?.keyPoints || documentData?.analysis?.keyTerms || []).map((term: any, index: number) => (
+                            <div key={index} className="bg-blue-50 border border-blue-200 rounded p-3">
+                              {typeof term === 'string' ? (
+                                <p className="text-blue-800">{term}</p>
+                              ) : (
+                                <div>
+                                  {term.term && (
+                                    <h5 className="font-semibold text-blue-900 mb-1">{term.term}</h5>
+                                  )}
+                                  <p className="text-blue-800 text-sm">{term.definition}</p>
+                                  {term.importance && (
+                                    <span className={`inline-block mt-1 px-2 py-1 text-xs rounded ${
+                                      term.importance === 'HIGH' ? 'bg-blue-200 text-blue-900' :
+                                      term.importance === 'MEDIUM' ? 'bg-blue-100 text-blue-800' :
+                                      'bg-gray-100 text-gray-800'
+                                    }`}>
+                                      {term.importance}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
               </motion.div>
 
-              {/* Key Terms Section */}
-              {documentData?.analysis?.keyTerms && Array.isArray(documentData.analysis.keyTerms) && documentData.analysis.keyTerms.length > 0 && (
-                <motion.div
-                  className="relative group"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.3 }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-cyan-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                  <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 bg-indigo-500/20 rounded-xl">
-                        <Search className="h-8 w-8 text-indigo-400" />
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-bold text-white">Key Terms Explained</h3>
-                        <p className="text-gray-400">Important legal terms made simple</p>
-                      </div>
+              {/* Risk Analysis */}
+              <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold flex items-center gap-3">
+                    <FileText className="h-6 w-6 text-violet-600" />
+                    <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
+                      {getTranslatedLabel('Risk Analysis', '⚠️ Risk Analysis')}
+                    </span>
+                  </h2>
+                  <button
+                    onClick={() => readText(getSectionContent('risks'), 'risks')}
+                    disabled={isTranslating || isLoadingTTS}
+                    className={`group relative overflow-hidden rounded-xl px-4 py-3 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg backdrop-blur-sm border ${
+                      currentlyReading === 'risks' 
+                        ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400 shadow-red-200' 
+                        : isLoadingTTS && currentlyReading === 'risks'
+                        ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400 shadow-yellow-200'
+                        : 'bg-red-500/20 border-red-400 text-white hover:bg-red-500/30 focus:ring-red-400 shadow-red-200'
+                    }`}
+                    title={
+                      isLoadingTTS && currentlyReading === 'risks' ? 'Loading audio...' :
+                      currentlyReading === 'risks' ? 'Stop reading' : 'Listen to risk analysis'
+                    }
+                  >
+                    <div className="flex items-center gap-2">
+                      {isLoadingTTS && currentlyReading === 'risks' ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : currentlyReading === 'risks' ? (
+                        <VolumeX className="h-5 w-5" />
+                      ) : (
+                        <Volume2 className="h-5 w-5" />
+                      )}
+                      <span className="text-sm font-medium">
+                        {isLoadingTTS && currentlyReading === 'risks' ? 'Loading...' :
+                         currentlyReading === 'risks' ? 'Stop' : 'Listen'}
+                      </span>
                     </div>
-                    
-                    <div className="grid gap-4">
-                      {documentData.analysis.keyTerms.map((term: any, index: number) => (
-                        <motion.div
-                          key={index}
-                          className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 hover:border-indigo-500/50 transition-all duration-300"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.4, delay: 0.1 * index }}
-                        >
-                          {typeof term === 'string' ? (
-                            <p className="text-gray-100">{term}</p>
-                          ) : (
-                            <div>
-                              {term.term && (
-                                <h5 className="font-bold text-white text-lg mb-2 flex items-center gap-2">
-                                  <span className="text-indigo-400">📘</span>
-                                  {term.term}
-                                </h5>
-                              )}
-                              <p className="text-gray-300 leading-relaxed mb-3">{term.definition}</p>
-                              {term.importance && (
-                                <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${
-                                  term.importance === 'HIGH' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                                  term.importance === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                                  'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                                }`}>
-                                  <div className={`w-2 h-2 rounded-full mr-2 ${
-                                    term.importance === 'HIGH' ? 'bg-red-400' :
-                                    term.importance === 'MEDIUM' ? 'bg-yellow-400' :
-                                    'bg-gray-400'
-                                  }`}></div>
-                                  {term.importance} PRIORITY
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Risk Analysis - Dashboard Style */}
-              <motion.div
-                className="relative group"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
-                  
-                  {/* Risk Score Dashboard */}
+                    {/* Animated background effect */}
+                    <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                  </button>
+                </div>
+                <div className="space-y-4">
                   {documentData?.analysis?.riskScore !== undefined && (
-                    <div className="mb-8">
-                      <div className="flex items-center gap-4 mb-6">
-                        <div className="p-3 bg-red-500/20 rounded-xl">
-                          <AlertTriangle className="h-8 w-8 text-red-400" />
-                        </div>
-                        <div>
-                          <h3 className="text-2xl font-bold text-white">Risk Assessment</h3>
-                          <p className="text-gray-400">AI-powered risk evaluation</p>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
-                        <div className="flex items-center justify-between mb-4">
-                          <span className="text-lg font-semibold text-gray-200">Overall Risk Score</span>
-                          <span className="text-3xl font-bold text-white">{documentData.analysis.riskScore}/100</span>
-                        </div>
-                        
-                        <div className="relative w-full bg-gray-700 rounded-full h-4 mb-2">
-                          <motion.div 
-                            className={`h-4 rounded-full shadow-lg ${
-                              documentData.analysis.riskScore > 70 ? 'bg-gradient-to-r from-red-500 to-red-600' :
-                              documentData.analysis.riskScore > 40 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
-                              'bg-gradient-to-r from-green-500 to-green-600'
+                    <div className="flex items-start gap-3 py-3">
+                      <span className="text-xl">📊</span>
+                      <div className="text-foreground text-lg">
+                        <p className="font-semibold">{getTranslatedLabel('Risk Score', 'Risk Score:')} {documentData.analysis.riskScore}/100</p>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                          <div 
+                            className={`h-2.5 rounded-full transition-all duration-300 ${
+                              documentData.analysis.riskScore > 70 ? 'bg-red-600' :
+                              documentData.analysis.riskScore > 40 ? 'bg-yellow-500' :
+                              'bg-green-600'
                             }`}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${documentData.analysis.riskScore}%` }}
-                            transition={{ duration: 1, delay: 0.5 }}
-                          ></motion.div>
+                            data-width={documentData.analysis.riskScore}
+                          ></div>
                         </div>
-                        
-                        <div className="flex justify-between text-sm text-gray-400">
-                          <span>Low Risk</span>
-                          <span>Medium Risk</span>
-                          <span>High Risk</span>
-                        </div>
-                        
-                        <div className="mt-4 p-4 bg-gray-900/50 rounded-lg">
-                          <p className="text-sm text-gray-300">
-                            {documentData.analysis.riskScore > 70 ? '🚨 High risk detected. Review carefully before signing.' :
-                             documentData.analysis.riskScore > 40 ? '⚠️ Moderate risk. Some clauses need attention.' :
-                             '✅ Low risk. Document appears standard.'}
-                          </p>
-                        </div>
+                        <style jsx>{`
+                          div[data-width] {
+                            width: ${documentData.analysis.riskScore}%;
+                          }
+                        `}</style>
                       </div>
                     </div>
                   )}
-
-                  {/* Key Risks */}
-                  {documentData?.analysis?.keyRisks && Array.isArray(documentData.analysis.keyRisks) && documentData.analysis.keyRisks.length > 0 && (
-                    <div className="mb-8">
-                      <h4 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                        <AlertCircle className="h-6 w-6 text-red-400" />
-                        Key Risk Areas
-                      </h4>
-                      
-                      <div className="grid gap-4">
-                        {documentData.analysis.keyRisks.map((risk: any, index: number) => (
-                          <motion.div
-                            key={index}
-                            className="bg-gray-800/50 rounded-xl border border-gray-700/50 hover:border-red-500/50 transition-all duration-300 overflow-hidden"
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.4, delay: 0.1 * index }}
-                          >
-                            {typeof risk === 'string' ? (
-                              <div className="p-6">
-                                <p className="text-gray-100">{risk}</p>
-                              </div>
-                            ) : (
-                              <div className="p-6">
-                                <div className="flex items-start justify-between mb-3">
+                  {(translatedData?.keyRisks || documentData?.analysis?.keyRisks) && Array.isArray(translatedData?.keyRisks || documentData?.analysis?.keyRisks) && (translatedData?.keyRisks || documentData?.analysis?.keyRisks).length > 0 && (
+                    <div className="flex items-start gap-3 py-3">
+                      <span className="text-xl">🔴</span>
+                      <div className="text-foreground text-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <p className="font-semibold">{getTranslatedLabel('Key Risks', 'Key Risks:')}</p>
+                          {translatedData?.keyRisks && currentLanguage !== 'en' && (
+                            <span className="text-sm text-muted-foreground italic">
+                              (Translated to {SUPPORTED_LANGUAGES[currentLanguage as keyof typeof SUPPORTED_LANGUAGES]})
+                            </span>
+                          )}
+                        </div>
+                        <div className="space-y-3">
+                          {(translatedData?.keyRisks || documentData?.analysis?.keyRisks || []).map((risk: any, index: number) => (
+                            <div key={index} className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
+                              {typeof risk === 'string' ? (
+                                <p className="text-red-800">{risk}</p>
+                              ) : (
+                                <div>
                                   {risk.category && (
                                     <h5 className="font-bold text-white text-lg flex items-center gap-2">
                                       <span className="text-red-400">⚠️</span>
@@ -593,26 +973,46 @@ export default function AnalysePage() {
                       </div>
                     </div>
                   )}
-
-                  {/* Recommendations */}
-                  {documentData?.analysis?.recommendations && Array.isArray(documentData.analysis.recommendations) && documentData.analysis.recommendations.length > 0 && (
-                    <div>
-                      <h4 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                        <CheckCircle className="h-6 w-6 text-green-400" />
-                        Expert Recommendations
-                      </h4>
-                      
-                      <div className="grid gap-3">
-                        {documentData.analysis.recommendations.map((rec: any, index: number) => (
-                          <motion.div
-                            key={index}
-                            className="bg-green-900/20 border border-green-700/30 rounded-lg p-4 hover:border-green-500/50 transition-all duration-300"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3, delay: 0.1 * index }}
+                  {(translatedData?.recommendations || documentData?.analysis?.recommendations) && Array.isArray(translatedData?.recommendations || documentData?.analysis?.recommendations) && (translatedData?.recommendations || documentData?.analysis?.recommendations).length > 0 && (
+                    <div className="flex items-start gap-3 py-3">
+                      <span className="text-xl">💡</span>
+                      <div className="text-foreground text-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-semibold">{getTranslatedLabel('Recommendations', 'Recommendations:')}</p>
+                          <button
+                            onClick={() => readText(getSectionContent('recommendations'), 'recommendations')}
+                            disabled={isTranslating || isLoadingTTS}
+                            className={`group relative overflow-hidden rounded-lg px-3 py-2 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 shadow-md backdrop-blur-sm border ${
+                              currentlyReading === 'recommendations' 
+                                ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400 shadow-red-200' 
+                                : isLoadingTTS && currentlyReading === 'recommendations'
+                                ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400 shadow-yellow-200'
+                                : 'bg-purple-500/20 border-purple-400 text-white hover:bg-purple-500/30 focus:ring-purple-400 shadow-purple-200'
+                            }`}
+                            title={
+                              isLoadingTTS && currentlyReading === 'recommendations' ? 'Loading audio...' :
+                              currentlyReading === 'recommendations' ? 'Stop reading' : 'Listen to recommendations'
+                            }
                           >
-                            <p className="text-green-100 flex items-start gap-3">
-                              <span className="text-green-400 mt-1">✓</span>
+                            <div className="flex items-center gap-1">
+                              {isLoadingTTS && currentlyReading === 'recommendations' ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : currentlyReading === 'recommendations' ? (
+                                <VolumeX className="h-4 w-4" />
+                              ) : (
+                                <Volume2 className="h-4 w-4" />
+                              )}
+                              <span className="text-xs font-medium">
+                                {isLoadingTTS && currentlyReading === 'recommendations' ? 'Loading...' :
+                                 currentlyReading === 'recommendations' ? 'Stop' : 'Listen'}
+                              </span>
+                            </div>
+                            <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                          </button>
+                        </div>
+                        <ul className="list-disc list-inside space-y-1">
+                          {(translatedData?.recommendations || documentData?.analysis?.recommendations || []).map((rec: any, index: number) => (
+                            <li key={index}>
                               {typeof rec === 'string' ? rec : rec.description || rec.recommendation || JSON.stringify(rec)}
                             </p>
                           </motion.div>
@@ -623,25 +1023,78 @@ export default function AnalysePage() {
                 </div>
               </motion.div>
 
-              {/* Obligations and Rights - Professional Dashboard */}
-              {((documentData?.analysis?.obligations && Array.isArray(documentData.analysis.obligations) && documentData.analysis.obligations.length > 0) || 
-                (documentData?.analysis?.rights && Array.isArray(documentData.analysis.rights) && documentData.analysis.rights.length > 0)) && (
-                <div className="grid lg:grid-cols-2 gap-8">
-                  
+              {/* Obligations and Rights */}
+              {(((translatedData?.obligations || documentData?.analysis?.obligations) && Array.isArray(translatedData?.obligations || documentData?.analysis?.obligations) && (translatedData?.obligations || documentData?.analysis?.obligations).length > 0) || 
+                ((translatedData?.rights || documentData?.analysis?.rights) && Array.isArray(translatedData?.rights || documentData?.analysis?.rights) && (translatedData?.rights || documentData?.analysis?.rights).length > 0)) && (
+                <div className="grid md:grid-cols-2 gap-6">
                   {/* Obligations */}
-                  {documentData?.analysis?.obligations && Array.isArray(documentData.analysis.obligations) && documentData.analysis.obligations.length > 0 && (
-                    <motion.div
-                      className="relative group"
-                      initial={{ opacity: 0, x: -30 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.6, delay: 0.8 }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                      <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
-                        
-                        <div className="flex items-center gap-4 mb-8">
-                          <div className="p-3 bg-orange-500/20 rounded-xl">
-                            <BookOpen className="h-8 w-8 text-orange-400" />
+                  {(translatedData?.obligations || documentData?.analysis?.obligations) && Array.isArray(translatedData?.obligations || documentData?.analysis?.obligations) && (translatedData?.obligations || documentData?.analysis?.obligations).length > 0 && (
+                    <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-2xl font-bold flex items-center gap-3">
+                            <FileText className="h-6 w-6 text-violet-600" />
+                            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
+                              {getTranslatedLabel('Your Obligations', '📋 Your Obligations')}
+                            </span>
+                          </h2>
+                          {translatedData?.obligations && currentLanguage !== 'en' && (
+                            <span className="text-sm text-muted-foreground italic">
+                              (Translated to {SUPPORTED_LANGUAGES[currentLanguage as keyof typeof SUPPORTED_LANGUAGES]})
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => readText(getSectionContent('obligations'), 'obligations')}
+                          disabled={isTranslating || isLoadingTTS}
+                          className={`group relative overflow-hidden rounded-xl px-4 py-3 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg backdrop-blur-sm border ${
+                            currentlyReading === 'obligations' 
+                              ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400 shadow-red-200' 
+                              : isLoadingTTS && currentlyReading === 'obligations'
+                              ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400 shadow-yellow-200'
+                              : 'bg-orange-500/20 border-orange-400 text-white hover:bg-orange-500/30 focus:ring-orange-400 shadow-orange-200'
+                          }`}
+                          title={
+                            isLoadingTTS && currentlyReading === 'obligations' ? 'Loading audio...' :
+                            currentlyReading === 'obligations' ? 'Stop reading' : 'Listen to obligations'
+                          }
+                        >
+                          <div className="flex items-center gap-2">
+                            {isLoadingTTS && currentlyReading === 'obligations' ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : currentlyReading === 'obligations' ? (
+                              <VolumeX className="h-5 w-5" />
+                            ) : (
+                              <Volume2 className="h-5 w-5" />
+                            )}
+                            <span className="text-sm font-medium">
+                              {isLoadingTTS && currentlyReading === 'obligations' ? 'Loading...' :
+                               currentlyReading === 'obligations' ? 'Stop' : 'Listen'}
+                            </span>
+                          </div>
+                          {/* Animated background effect */}
+                          <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {(translatedData?.obligations || documentData?.analysis?.obligations || []).map((obligation: any, index: number) => (
+                          <div key={index} className="bg-orange-50 border border-orange-200 rounded p-3">
+                            {typeof obligation === 'string' ? (
+                              <div className="flex items-start gap-3">
+                                <span className="text-xl">⚖️</span>
+                                <p className="text-foreground">{obligation}</p>
+                              </div>
+                            ) : (
+                              <div>
+                                {obligation.party && (
+                                  <h5 className="font-semibold text-orange-900 mb-1">{obligation.party}</h5>
+                                )}
+                                <p className="text-orange-800 mb-1">{obligation.description}</p>
+                                {obligation.deadline && (
+                                  <p className="text-sm text-orange-700">⏰ Deadline: {obligation.deadline}</p>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div>
                             <h3 className="text-2xl font-bold text-white">Your Obligations</h3>
@@ -701,19 +1154,70 @@ export default function AnalysePage() {
                   )}
                   
                   {/* Rights */}
-                  {documentData?.analysis?.rights && Array.isArray(documentData.analysis.rights) && documentData.analysis.rights.length > 0 && (
-                    <motion.div
-                      className="relative group"
-                      initial={{ opacity: 0, x: 30 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.6, delay: 1.0 }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                      <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
-                        
-                        <div className="flex items-center gap-4 mb-8">
-                          <div className="p-3 bg-green-500/20 rounded-xl">
-                            <Shield className="h-8 w-8 text-green-400" />
+                  {(translatedData?.rights || documentData?.analysis?.rights) && Array.isArray(translatedData?.rights || documentData?.analysis?.rights) && (translatedData?.rights || documentData?.analysis?.rights).length > 0 && (
+                    <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-2xl font-bold flex items-center gap-3">
+                            <FileText className="h-6 w-6 text-violet-600" />
+                            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
+                              {getTranslatedLabel('Your Rights', '✅ Your Rights')}
+                            </span>
+                          </h2>
+                          {translatedData?.rights && currentLanguage !== 'en' && (
+                            <span className="text-sm text-muted-foreground italic">
+                              (Translated to {SUPPORTED_LANGUAGES[currentLanguage as keyof typeof SUPPORTED_LANGUAGES]})
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => readText(getSectionContent('rights'), 'rights')}
+                          disabled={isTranslating || isLoadingTTS}
+                          className={`group relative overflow-hidden rounded-xl px-4 py-3 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg backdrop-blur-sm border ${
+                            currentlyReading === 'rights' 
+                              ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400 shadow-red-200' 
+                              : isLoadingTTS && currentlyReading === 'rights'
+                              ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400 shadow-yellow-200'
+                              : 'bg-green-500/20 border-green-400 text-white hover:bg-green-500/30 focus:ring-green-400 shadow-green-200'
+                          }`}
+                          title={
+                            isLoadingTTS && currentlyReading === 'rights' ? 'Loading audio...' :
+                            currentlyReading === 'rights' ? 'Stop reading' : 'Listen to rights'
+                          }
+                        >
+                          <div className="flex items-center gap-2">
+                            {isLoadingTTS && currentlyReading === 'rights' ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : currentlyReading === 'rights' ? (
+                              <VolumeX className="h-5 w-5" />
+                            ) : (
+                              <Volume2 className="h-5 w-5" />
+                            )}
+                            <span className="text-sm font-medium">
+                              {isLoadingTTS && currentlyReading === 'rights' ? 'Loading...' :
+                               currentlyReading === 'rights' ? 'Stop' : 'Listen'}
+                            </span>
+                          </div>
+                          {/* Animated background effect */}
+                          <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {(translatedData?.rights || documentData?.analysis?.rights || []).map((right: any, index: number) => (
+                          <div key={index} className="bg-green-50 border border-green-200 rounded p-3">
+                            {typeof right === 'string' ? (
+                              <div className="flex items-start gap-3">
+                                <span className="text-xl">🛡️</span>
+                                <p className="text-foreground">{right}</p>
+                              </div>
+                            ) : (
+                              <div>
+                                {right.party && (
+                                  <h5 className="font-semibold text-green-900 mb-1">{right.party}</h5>
+                                )}
+                                <p className="text-green-800">{right.description}</p>
+                              </div>
+                            )}
                           </div>
                           <div>
                             <h3 className="text-2xl font-bold text-white">Your Rights</h3>

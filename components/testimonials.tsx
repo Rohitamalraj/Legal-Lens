@@ -1,8 +1,6 @@
 import { motion, useInView } from "framer-motion"
 import { useRef } from "react"
 import { Upload, Brain, Eye } from "lucide-react"
-import { geist } from "@/lib/fonts"
-import { cn } from "@/lib/utils"
 
 const steps = [
   {
@@ -60,10 +58,7 @@ export function TestimonialsSection() {
           </div>
 
           <h2
-            className={cn(
-              "via-foreground mb-8 bg-gradient-to-b from-zinc-800 to-zinc-700 bg-clip-text text-center text-4xl font-semibold tracking-tighter text-transparent md:text-[54px] md:leading-[60px]",
-              geist.className,
-            )}
+            className="via-foreground mb-8 bg-gradient-to-b from-zinc-800 to-zinc-700 bg-clip-text text-center text-4xl font-semibold tracking-tighter text-transparent md:text-[54px] md:leading-[60px]"
           >
             3 Simple Steps
           </h2>

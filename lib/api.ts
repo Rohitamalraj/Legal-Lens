@@ -216,6 +216,104 @@ class ApiService {
       };
     }
   }
+
+  /**
+   * Translate a summary object including all analysis data
+   */
+  async translateSummary(
+    summary: any,
+    targetLanguage: string,
+    sourceLanguage?: string
+  ): Promise<ApiResponse<any>> {
+    try {
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'translateSummary',
+          summary,
+          targetLanguage,
+          sourceLanguage,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: result.error || 'Translation failed' };
+      }
+
+      return { success: true, data: result };
+    } catch (error) {
+      console.error('Translation error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Translation failed'
+      };
+    }
+  }
+
+  /**
+   * Translate a single text string
+   */
+  async translateText(
+    text: string,
+    targetLanguage: string,
+    sourceLanguage?: string
+  ): Promise<ApiResponse<any>> {
+    try {
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'translateText',
+          text,
+          targetLanguage,
+          sourceLanguage,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: result.error || 'Translation failed' };
+      }
+
+      return { success: true, data: result };
+    } catch (error) {
+      console.error('Translation error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Translation failed'
+      };
+    }
+  }
+
+  /**
+   * Get supported languages for translation
+   */
+  async getSupportedLanguages(): Promise<ApiResponse<Record<string, string>>> {
+    try {
+      const response = await fetch('/api/translate');
+      const result = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: 'Failed to fetch supported languages' };
+      }
+
+      return { success: true, data: result.supportedLanguages };
+    } catch (error) {
+      console.error('Get supported languages error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch supported languages'
+      };
+    }
+  }
 }
 
 export const apiService = new ApiService();
