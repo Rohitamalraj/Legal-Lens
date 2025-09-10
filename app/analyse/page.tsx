@@ -34,9 +34,16 @@ export default function AnalysePage() {
   const [isLoadingTTS, setIsLoadingTTS] = useState(false)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // Stop speech when language changes
   useEffect(() => {
+    // Abort any pending TTS request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    
     if (currentAudio) {
       currentAudio.pause()
       setCurrentAudio(null)
@@ -44,7 +51,21 @@ export default function AnalysePage() {
     window.speechSynthesis.cancel()
     setIsReading(false)
     setCurrentlyReading(null)
+    setIsLoadingTTS(false)
   }, [currentLanguage])
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+      if (currentAudio) {
+        currentAudio.pause()
+      }
+      window.speechSynthesis.cancel()
+    }
+  }, [])
 
   // Helper function to get translated UI labels
   const getTranslatedLabel = (key: string, fallback: string = key) => {
@@ -56,6 +77,12 @@ export default function AnalysePage() {
 
   // Google Cloud Text-to-Speech functionality (Optimized for Speed)
   const readText = async (text: string, sectionId: string) => {
+    // Abort any previous TTS request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    
     // Stop any current speech immediately
     if (currentAudio) {
       currentAudio.pause()
@@ -99,10 +126,13 @@ export default function AnalysePage() {
 
       // Call Google Cloud TTS API with timeout for faster response
       const controller = new AbortController()
+      abortControllerRef.current = controller
+      
       const timeoutId = setTimeout(() => {
-        console.log('TTS request timeout - aborting...')
+        console.log('TTS request timeout after 15 seconds - aborting...')
         controller.abort()
-      }, 10000) // 10 second timeout
+        abortControllerRef.current = null
+      }, 15000) // Increased to 15 second timeout for more stability
 
       const response = await fetch('/api/tts', {
         method: 'POST',
@@ -117,7 +147,8 @@ export default function AnalysePage() {
         signal: controller.signal
       })
 
-      clearTimeout(timeoutId)
+      clearTimeout(timeoutId) // Always clear timeout on successful response
+      abortControllerRef.current = null // Clear ref on success
 
       if (!response.ok) {
         throw new Error('TTS API request failed')
@@ -157,16 +188,19 @@ export default function AnalysePage() {
       await audio.play()
       
     } catch (error) {
+      // Handle AbortError specifically first (most common during development)
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('TTS request was aborted (timeout or user cancellation)')
+        setIsLoadingTTS(false)
+        setIsReading(false)
+        setCurrentlyReading(null)
+        return // Silent return for abort errors
+      }
+      
       console.error('Google TTS Error:', error)
       setIsLoadingTTS(false)
       setIsReading(false)
       setCurrentlyReading(null)
-      
-      // Handle AbortError specifically
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.log('TTS request was aborted (timeout or user cancellation)')
-        return
-      }
       
       // Quick fallback to browser TTS for instant response
       console.log('Using browser TTS fallback for instant response...')
