@@ -7,7 +7,7 @@ import { NewReleasePromo } from "@/components/new-release-promo"
 import { FAQSection } from "@/components/faq-section"
 import { PricingSection } from "@/components/pricing-section"
 import { StickyFooter } from "@/components/sticky-footer"
-import WebGLParticleSystem from "@/components/Particles"
+import WebGLParticleSystem from "@/components/ParticlesWrapper"
 
 export default function LegalLensHomepage() {
   const [headerScrollState, setHeaderScrollState] = useState(false)
