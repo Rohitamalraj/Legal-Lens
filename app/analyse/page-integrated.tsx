@@ -152,7 +152,9 @@ export default function IntegratedAnalysePage() {
               <div>
                 <SummaryCard 
                   summary={currentDocument.analysis.summary}
-                  keyTerms={currentDocument.analysis.keyTerms}
+                  keyTerms={currentDocument.analysis.keyTerms?.map(term => 
+                    typeof term === 'string' ? term : term.term || ''
+                  ).filter(Boolean)}
                   filename={currentDocument.filename}
                 />
               </div>
@@ -171,11 +173,34 @@ export default function IntegratedAnalysePage() {
                   <h3 className="text-xl font-semibold text-red-600 mb-4 flex items-center">
                     🚨 Key Risks
                   </h3>
-                  <ul className="space-y-2">
+                  <ul className="space-y-3">
                     {currentDocument.analysis.keyRisks.map((risk, index) => (
                       <li key={index} className="flex items-start">
                         <span className="text-red-500 mr-2">•</span>
-                        <span>{risk}</span>
+                        <div>
+                          {typeof risk === 'string' ? (
+                            <span>{risk}</span>
+                          ) : (
+                            <div>
+                              {risk.category && (
+                                <div className="font-medium text-red-700 mb-1">{risk.category}</div>
+                              )}
+                              <div className="text-gray-700 mb-1">{risk.description}</div>
+                              {risk.severity && (
+                                <span className={`inline-block px-2 py-1 text-xs rounded ${
+                                  risk.severity === 'CRITICAL' ? 'bg-red-200 text-red-800' :
+                                  risk.severity === 'HIGH' ? 'bg-orange-200 text-orange-800' :
+                                  'bg-yellow-200 text-yellow-800'
+                                }`}>
+                                  {risk.severity}
+                                </span>
+                              )}
+                              {risk.recommendation && (
+                                <div className="text-blue-600 text-sm mt-1">💡 {risk.recommendation}</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -205,11 +230,25 @@ export default function IntegratedAnalysePage() {
                   <h3 className="text-xl font-semibold text-orange-600 mb-4 flex items-center">
                     ⚖️ Your Obligations
                   </h3>
-                  <ul className="space-y-2">
+                  <ul className="space-y-3">
                     {currentDocument.analysis.obligations.map((obligation, index) => (
                       <li key={index} className="flex items-start">
                         <span className="text-orange-500 mr-2">•</span>
-                        <span>{obligation}</span>
+                        <div>
+                          {typeof obligation === 'string' ? (
+                            <span>{obligation}</span>
+                          ) : (
+                            <div>
+                              {obligation.party && (
+                                <div className="font-medium text-orange-700 mb-1">{obligation.party}</div>
+                              )}
+                              <div className="text-gray-700 mb-1">{obligation.description}</div>
+                              {obligation.deadline && (
+                                <div className="text-blue-600 text-sm">⏰ Deadline: {obligation.deadline}</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -222,11 +261,22 @@ export default function IntegratedAnalysePage() {
                   <h3 className="text-xl font-semibold text-green-600 mb-4 flex items-center">
                     🛡️ Your Rights
                   </h3>
-                  <ul className="space-y-2">
+                  <ul className="space-y-3">
                     {currentDocument.analysis.rights.map((right, index) => (
                       <li key={index} className="flex items-start">
                         <span className="text-green-500 mr-2">•</span>
-                        <span>{right}</span>
+                        <div>
+                          {typeof right === 'string' ? (
+                            <span>{right}</span>
+                          ) : (
+                            <div>
+                              {right.party && (
+                                <div className="font-medium text-green-700 mb-1">{right.party}</div>
+                              )}
+                              <div className="text-gray-700">{right.description}</div>
+                            </div>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
