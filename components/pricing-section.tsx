@@ -3,8 +3,6 @@
 import { motion, useInView } from "framer-motion"
 import { Heart, Shield, Users, Zap } from "lucide-react"
 import { useRef } from "react"
-import { geist } from "@/lib/fonts"
-import { cn } from "@/lib/utils"
 
 const values = [
   {
@@ -63,10 +61,7 @@ export function PricingSection() {
           </motion.div>
 
           <h2
-            className={cn(
-              "via-foreground mb-8 bg-gradient-to-b from-zinc-800 to-zinc-700 bg-clip-text text-center text-4xl font-semibold tracking-tighter text-transparent md:text-[54px] md:leading-[60px]",
-              geist.className,
-            )}
+            className="via-foreground mb-8 bg-gradient-to-b from-zinc-800 to-zinc-700 bg-clip-text text-center text-4xl font-semibold tracking-tighter text-transparent md:text-[54px] md:leading-[60px]"
           >
             Our Mission
           </h2>
