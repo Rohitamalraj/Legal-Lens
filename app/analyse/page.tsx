@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Upload, FileText, MessageSquare, Send, User, Bot, Globe, Volume2, Loader2, VolumeX, Square, Clock, AlertTriangle, AlertCircle, CheckCircle, BookOpen, Shield, Search } from 'lucide-react'
+import { Upload, FileText, MessageSquare, Send, User, Bot, Globe, Volume2, Loader2, VolumeX, Square, Clock, AlertTriangle, AlertCircle, CheckCircle, BookOpen, Shield, Search, Mic } from 'lucide-react'
 import { apiService, type DocumentAnalysis } from '@/lib/api'
 import { debugDocumentData } from '@/lib/debug-utils'
 import { LanguageSelector, TranslationStatus } from '@/components/language-selector'
@@ -32,6 +32,10 @@ export default function AnalysePage() {
   const [currentlyReading, setCurrentlyReading] = useState<string | null>(null)
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null)
   const [isLoadingTTS, setIsLoadingTTS] = useState(false)
+  
+  // Speech-to-Text state
+  const [isRecording, setIsRecording] = useState(false)
+  const [isProcessingSpeech, setIsProcessingSpeech] = useState(false)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -460,6 +464,165 @@ export default function AnalysePage() {
       setIsSendingMessage(false)
     }
   }
+
+  // Speech-to-Text functions
+  const startSpeechRecognition = async () => {
+    try {
+      console.log('🎤 Starting speech recognition...');
+      
+      // Check if browser supports speech recognition
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        console.log('🎤 Using browser speech recognition...');
+        startBrowserSpeechRecognition();
+        return;
+      }
+      
+      // Fallback message if no speech recognition available
+      setChatMessages(prev => [...prev, {
+        role: 'assistant',
+        message: 'Speech recognition is not available in your browser. Please type your question instead.'
+      }]);
+      
+    } catch (error) {
+      console.error('Failed to start speech recognition:', error);
+      setChatMessages(prev => [...prev, {
+        role: 'assistant',
+        message: 'Sorry, I couldn\'t access speech recognition. Please type your question instead.'
+      }]);
+    }
+  };
+
+  // Browser Speech Recognition (immediate, auto-send)
+  const startBrowserSpeechRecognition = () => {
+    try {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = currentLanguage === 'en' ? 'en-US' : 
+                        currentLanguage === 'es' ? 'es-ES' :
+                        currentLanguage === 'fr' ? 'fr-FR' :
+                        currentLanguage === 'de' ? 'de-DE' :
+                        currentLanguage === 'it' ? 'it-IT' :
+                        currentLanguage === 'pt' ? 'pt-PT' :
+                        currentLanguage === 'ru' ? 'ru-RU' :
+                        currentLanguage === 'zh' ? 'zh-CN' :
+                        currentLanguage === 'ja' ? 'ja-JP' :
+                        currentLanguage === 'ko' ? 'ko-KR' :
+                        currentLanguage === 'ar' ? 'ar-SA' :
+                        currentLanguage === 'hi' ? 'hi-IN' :
+                        currentLanguage === 'nl' ? 'nl-NL' :
+                        currentLanguage === 'sv' ? 'sv-SE' :
+                        currentLanguage === 'da' ? 'da-DK' :
+                        currentLanguage === 'no' ? 'no-NO' :
+                        currentLanguage === 'fi' ? 'fi-FI' :
+                        currentLanguage === 'pl' ? 'pl-PL' :
+                        currentLanguage === 'cs' ? 'cs-CZ' :
+                        currentLanguage === 'hu' ? 'hu-HU' : 'en-US';
+      
+      setIsRecording(true);
+      setIsProcessingSpeech(false);
+      
+      recognition.onstart = () => {
+        console.log('🎤 Speech recognition started');
+      };
+      
+      recognition.onresult = async (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        const confidence = event.results[0][0].confidence;
+        
+        console.log('✅ Speech transcribed:', transcript);
+        console.log('Confidence:', confidence);
+        
+        setIsRecording(false);
+        setIsProcessingSpeech(true);
+        
+        // Auto-send the message immediately
+        if (transcript.trim()) {
+          // Add user message
+          const userMessage = { role: 'user' as const, message: transcript.trim() };
+          setChatMessages(prev => [...prev, userMessage]);
+          
+          // Send to API automatically
+          if (!documentData) {
+            const errorMessage = { role: 'assistant' as const, message: 'Please upload and analyze a document first before asking questions.' };
+            setChatMessages(prev => [...prev, errorMessage]);
+            setIsProcessingSpeech(false);
+            return;
+          }
+          
+          setIsSendingMessage(true);
+          
+          try {
+            const response = await apiService.sendChatMessage(documentData.id, transcript.trim());
+            
+            if (response.success && response.data) {
+              const aiMessage = { role: 'assistant' as const, message: response.data.response };
+              setChatMessages(prev => [...prev, aiMessage]);
+            } else {
+              const errorMessage = { 
+                role: 'assistant' as const, 
+                message: `Sorry, I encountered an error: ${response.error || 'Unknown error'}. Please try again.`
+              };
+              setChatMessages(prev => [...prev, errorMessage]);
+            }
+          } catch (error) {
+            console.error('Chat error:', error);
+            const errorMessage = { 
+              role: 'assistant' as const, 
+              message: 'Sorry, there was a problem processing your request. Please try again.'
+            };
+            setChatMessages(prev => [...prev, errorMessage]);
+          } finally {
+            setIsSendingMessage(false);
+            setIsProcessingSpeech(false);
+          }
+        }
+      };
+      
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsRecording(false);
+        setIsProcessingSpeech(false);
+        
+        let errorMessage = 'Speech recognition error. Please try again.';
+        if (event.error === 'not-allowed') {
+          errorMessage = 'Microphone access denied. Please allow microphone permissions and try again.';
+        } else if (event.error === 'no-speech') {
+          errorMessage = 'No speech detected. Please speak clearly and try again.';
+        }
+        
+        setChatMessages(prev => [...prev, {
+          role: 'assistant',
+          message: errorMessage
+        }]);
+      };
+      
+      recognition.onend = () => {
+        setIsRecording(false);
+        if (!isProcessingSpeech) {
+          setIsProcessingSpeech(false);
+        }
+      };
+      
+      recognition.start();
+      
+    } catch (error) {
+      console.error('Browser speech recognition error:', error);
+      setIsRecording(false);
+      setIsProcessingSpeech(false);
+      setChatMessages(prev => [...prev, {
+        role: 'assistant',
+        message: 'Speech recognition is not supported in your browser. Please type your question instead.'
+      }]);
+    }
+  };
+
+  const stopSpeechRecognition = () => {
+    setIsRecording(false);
+    setIsProcessingSpeech(false);
+  };
 
   // Translation function
   const handleLanguageChange = async (language: SupportedLanguageCode) => {
@@ -1334,13 +1497,37 @@ export default function AnalysePage() {
                             value={currentMessage}
                             onChange={(e) => setCurrentMessage(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                            placeholder="Ask a question about your document..."
+                            placeholder={isRecording ? "🎤 Listening..." : isProcessingSpeech ? "Processing speech..." : "Ask a question about your document..."}
                             className="w-full px-6 py-4 bg-gray-800/50 border border-gray-700/50 rounded-xl text-gray-100 placeholder-gray-400 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-300"
+                            disabled={isRecording || isProcessingSpeech}
                           />
                         </div>
+                        
+                        {/* Speech Recognition Button */}
+                        <motion.button
+                          onClick={isRecording ? stopSpeechRecognition : startSpeechRecognition}
+                          disabled={isProcessingSpeech || isSendingMessage}
+                          className={`px-4 py-4 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg ${
+                            isRecording 
+                              ? 'bg-red-600 hover:bg-red-700 text-white' 
+                              : 'bg-green-600 hover:bg-green-700 text-white'
+                          }`}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          {isRecording ? (
+                            <Square className="h-5 w-5" />
+                          ) : isProcessingSpeech ? (
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          ) : (
+                            <Mic className="h-5 w-5" />
+                          )}
+                        </motion.button>
+                        
+                        {/* Send Button */}
                         <motion.button
                           onClick={handleSendMessage}
-                          disabled={!currentMessage.trim() || isSendingMessage}
+                          disabled={!currentMessage.trim() || isSendingMessage || isRecording || isProcessingSpeech}
                           className="px-6 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl hover:from-violet-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
