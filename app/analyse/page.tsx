@@ -136,7 +136,7 @@ export default function AnalysePage() {
         console.log('TTS request timeout after 15 seconds - aborting...')
         controller.abort()
         abortControllerRef.current = null
-      }, 15000) // Increased to 15 second timeout for more stability
+      }, 15000) // 15 second timeout for stability
 
       const response = await fetch('/api/tts', {
         method: 'POST',
@@ -300,17 +300,6 @@ export default function AnalysePage() {
     }
   }
 
-  const navigateToSection = (sectionId: string) => {
-    setMobileNavVisible(false)
-    setTimeout(() => {
-      if (sectionId === 'home') {
-        window.location.href = '/'
-      } else {
-        window.location.href = `/#${sectionId}`
-      }
-    }, 100)
-  }
-
   // Check for existing document on page load
   useEffect(() => {
     const checkExistingDocument = async () => {
@@ -367,19 +356,20 @@ export default function AnalysePage() {
         throw new Error(uploadResult.error || 'Document upload failed')
       }
       
-        if (uploadResult.data) {
-          console.log('DEBUG: Setting document data after upload')
-          debugDocumentData(uploadResult.data)
-          setDocumentData(uploadResult.data)
-          setAnalysisComplete(true)
-          localStorage.setItem('currentDocumentId', uploadResult.data.id)
-          
-          // Dispatch event for other components
-          const event = new CustomEvent('documentUploaded', {
-            detail: uploadResult.data
-          })
-          window.dispatchEvent(event)
-        }    } catch (error) {
+      if (uploadResult.data) {
+        console.log('DEBUG: Setting document data after upload')
+        debugDocumentData(uploadResult.data)
+        setDocumentData(uploadResult.data)
+        setAnalysisComplete(true)
+        localStorage.setItem('currentDocumentId', uploadResult.data.id)
+        
+        // Dispatch event for other components
+        const event = new CustomEvent('documentUploaded', {
+          detail: uploadResult.data
+        })
+        window.dispatchEvent(event)
+      }
+    } catch (error) {
       console.error('Upload error:', error)
       setUploadError(error instanceof Error ? error.message : 'Upload failed')
     } finally {
@@ -661,14 +651,14 @@ export default function AnalysePage() {
         ) || [],
         // UI Labels to translate
         uiLabels: {
-          'Legal Lens Summary': '🧠 Legal Lens Summary',
-          'Key Terms': 'Key Terms:',
-          'Risk Analysis': '⚠️ Risk Analysis', 
-          'Risk Score': 'Risk Score:',
-          'Key Risks': 'Key Risks:',
-          'Recommendations': 'Recommendations:',
-          'Your Obligations': '📋 Your Obligations',
-          'Your Rights': '✅ Your Rights'
+          'Legal Lens Summary': 'Legal Lens Summary',
+          'Key Terms': 'Key Terms',
+          'Risk Analysis': 'Risk Analysis', 
+          'Risk Score': 'Risk Score',
+          'Key Risks': 'Key Risks',
+          'Recommendations': 'Recommendations',
+          'Your Obligations': 'Your Obligations',
+          'Your Rights': 'Your Rights'
         }
       }
 
@@ -743,6 +733,7 @@ export default function AnalysePage() {
           className="absolute bottom-1/5 left-3/5 w-1.5 h-1.5 bg-violet-400/35 rounded-full"
         ></motion.div>
       </motion.div>
+
       {/* Header */}
       <header className="sticky top-4 z-50 mx-4 rounded-full bg-background/70 backdrop-blur-xl border border-border shadow-2xl">
         <div className="flex items-center justify-between px-8 py-4">
@@ -809,6 +800,7 @@ export default function AnalysePage() {
                 <LanguageSelector
                   currentLanguage={currentLanguage}
                   onLanguageChange={handleLanguageChange}
+                  disabled={isTranslating || !documentData}
                 />
               </div>
             </div>
@@ -923,219 +915,307 @@ export default function AnalysePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              {/* Plain English Summary */}
-              <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold flex items-center gap-3">
-                    <FileText className="h-6 w-6 text-violet-600" />
-                    <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-                      {getTranslatedLabel('Legal Lens Summary', '🧠 Legal Lens Summary')}
-                    </span>
-                  </h2>
-                  <button
-                    onClick={() => readText(getSectionContent('summary'), 'summary')}
-                    disabled={isTranslating || isLoadingTTS}
-                    className={`group relative overflow-hidden rounded-xl px-4 py-3 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg backdrop-blur-sm border ${
-                      currentlyReading === 'summary' 
-                        ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400 shadow-red-200' 
-                        : isLoadingTTS && currentlyReading === 'summary'
-                        ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400 shadow-yellow-200'
-                        : 'bg-blue-500/20 border-blue-400 text-white hover:bg-blue-500/30 focus:ring-blue-400 shadow-blue-200'
-                    }`}
-                    title={
-                      isLoadingTTS && currentlyReading === 'summary' ? 'Loading audio...' :
-                      currentlyReading === 'summary' ? 'Stop reading' : 'Listen to summary'
-                    }
-                  >
-                    <div className="flex items-center gap-2">
-                      {isLoadingTTS && currentlyReading === 'summary' ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                      ) : currentlyReading === 'summary' ? (
-                        <VolumeX className="h-5 w-5" />
-                      ) : (
-                        <Volume2 className="h-5 w-5" />
-                      )}
-                      <span className="text-sm font-medium">
-                        {isLoadingTTS && currentlyReading === 'summary' ? 'Loading...' :
-                         currentlyReading === 'summary' ? 'Stop' : 'Listen'}
-                      </span>
-                    </div>
-                    {/* Animated background effect */}
-                    <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-                  </button>
-                </div>
-                <div className="space-y-4">
-                  {(translatedData?.summary || documentData?.analysis?.summary) && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">📄</span>
-                      <div className="text-foreground text-lg">
-                        <p>{translatedData?.summary || documentData?.analysis?.summary}</p>
-                        {translatedData?.summary && currentLanguage !== 'en' && (
-                          <p className="text-sm text-muted-foreground mt-2 italic">
-                            Translated to {SUPPORTED_LANGUAGES[currentLanguage as keyof typeof SUPPORTED_LANGUAGES]}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {(translatedData?.keyPoints || documentData?.analysis?.keyTerms) && Array.isArray(translatedData?.keyPoints || documentData?.analysis?.keyTerms) && (translatedData?.keyPoints || documentData?.analysis?.keyTerms).length > 0 && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">🔑</span>
-                      <div className="text-foreground text-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-semibold">{getTranslatedLabel('Key Terms', 'Key Terms:')}</p>
-                          <button
-                            onClick={() => readText(getSectionContent('keyTerms'), 'keyTerms')}
-                            disabled={isTranslating || isLoadingTTS}
-                            className={`group relative overflow-hidden rounded-lg px-3 py-2 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 shadow-md backdrop-blur-sm border ${
-                              currentlyReading === 'keyTerms' 
-                                ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400 shadow-red-200' 
-                                : isLoadingTTS && currentlyReading === 'keyTerms'
-                                ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400 shadow-yellow-200'
-                                : 'bg-blue-500/20 border-blue-400 text-white hover:bg-blue-500/30 focus:ring-blue-400 shadow-blue-200'
-                            }`}
-                            title={
-                              isLoadingTTS && currentlyReading === 'keyTerms' ? 'Loading audio...' :
-                              currentlyReading === 'keyTerms' ? 'Stop reading' : 'Listen to key terms'
-                            }
-                          >
-                            <div className="flex items-center gap-1">
-                              {isLoadingTTS && currentlyReading === 'keyTerms' ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : currentlyReading === 'keyTerms' ? (
-                                <VolumeX className="h-4 w-4" />
-                              ) : (
-                                <Volume2 className="h-4 w-4" />
-                              )}
-                              <span className="text-xs font-medium">
-                                {isLoadingTTS && currentlyReading === 'keyTerms' ? 'Loading...' :
-                                 currentlyReading === 'keyTerms' ? 'Stop' : 'Listen'}
-                              </span>
-                            </div>
-                            <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-                          </button>
-                        </div>
-                        <div className="space-y-3">
-                          {(translatedData?.keyPoints || documentData?.analysis?.keyTerms || []).map((term: any, index: number) => (
-                            <div key={index} className="bg-blue-50 border border-blue-200 rounded p-3">
-                              {typeof term === 'string' ? (
-                                <p className="text-blue-800">{term}</p>
-                              ) : (
-                                <div>
-                                  {term.term && (
-                                    <h5 className="font-semibold text-blue-900 mb-1">{term.term}</h5>
-                                  )}
-                                  <p className="text-blue-800 text-sm">{term.definition}</p>
-                                  {term.importance && (
-                                    <span className={`inline-block mt-1 px-2 py-1 text-xs rounded ${
-                                      term.importance === 'HIGH' ? 'bg-blue-200 text-blue-900' :
-                                      term.importance === 'MEDIUM' ? 'bg-blue-100 text-blue-800' :
-                                      'bg-gray-100 text-gray-800'
-                                    }`}>
-                                      {term.importance}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+              {/* Document Overview Header */}
+              <motion.div
+                className="text-center mb-12"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+              >
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                  Analysis <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Complete</span>
+                </h2>
+                <p className="text-lg text-muted-foreground">
+                  Here's what we found in your document - broken down in plain English
+                </p>
+              </motion.div>
 
-              {/* Risk Analysis */}
+              {/* Document Summary - Hero Style */}
               <motion.div
                 className="relative group"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.8 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
               >
-                <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold flex items-center gap-3">
-                    <FileText className="h-6 w-6 text-violet-600" />
-                    <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-                      {getTranslatedLabel('Risk Analysis', '⚠️ Risk Analysis')}
-                    </span>
-                  </h2>
-                  <button
-                    onClick={() => readText(getSectionContent('risks'), 'risks')}
-                    disabled={isTranslating || isLoadingTTS}
-                    className={`group relative overflow-hidden rounded-xl px-4 py-3 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg backdrop-blur-sm border ${
-                      currentlyReading === 'risks' 
-                        ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400 shadow-red-200' 
-                        : isLoadingTTS && currentlyReading === 'risks'
-                        ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400 shadow-yellow-200'
-                        : 'bg-red-500/20 border-red-400 text-white hover:bg-red-500/30 focus:ring-red-400 shadow-red-200'
-                    }`}
-                    title={
-                      isLoadingTTS && currentlyReading === 'risks' ? 'Loading audio...' :
-                      currentlyReading === 'risks' ? 'Stop reading' : 'Listen to risk analysis'
-                    }
-                  >
-                    <div className="flex items-center gap-2">
-                      {isLoadingTTS && currentlyReading === 'risks' ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                      ) : currentlyReading === 'risks' ? (
-                        <VolumeX className="h-5 w-5" />
-                      ) : (
-                        <Volume2 className="h-5 w-5" />
-                      )}
-                      <span className="text-sm font-medium">
-                        {isLoadingTTS && currentlyReading === 'risks' ? 'Loading...' :
-                         currentlyReading === 'risks' ? 'Stop' : 'Listen'}
-                      </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-blue-500/20 rounded-xl">
+                        <FileText className="h-8 w-8 text-blue-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-white">
+                          {getTranslatedLabel('Legal Lens Summary', 'Document Summary')}
+                        </h3>
+                        <p className="text-gray-400">AI-powered breakdown in plain English</p>
+                      </div>
                     </div>
-                    {/* Animated background effect */}
-                    <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-                  </button>
+                    <button
+                      onClick={() => readText(getSectionContent('summary'), 'summary')}
+                      disabled={isTranslating || isLoadingTTS}
+                      className={`group relative overflow-hidden rounded-xl px-4 py-3 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 backdrop-blur-sm border ${
+                        currentlyReading === 'summary' 
+                          ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400' 
+                          : isLoadingTTS && currentlyReading === 'summary'
+                          ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400'
+                          : 'bg-blue-500/20 border-blue-400 text-white hover:bg-blue-500/30 focus:ring-blue-400'
+                      }`}
+                      title={
+                        isLoadingTTS && currentlyReading === 'summary' ? 'Loading audio...' :
+                        currentlyReading === 'summary' ? 'Stop reading' : 'Listen to summary'
+                      }
+                    >
+                      <div className="flex items-center gap-2">
+                        {isLoadingTTS && currentlyReading === 'summary' ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : currentlyReading === 'summary' ? (
+                          <VolumeX className="h-5 w-5" />
+                        ) : (
+                          <Volume2 className="h-5 w-5" />
+                        )}
+                        <span className="text-sm font-medium">
+                          {isLoadingTTS && currentlyReading === 'summary' ? 'Loading...' :
+                           currentlyReading === 'summary' ? 'Stop' : 'Listen'}
+                        </span>
+                      </div>
+                      {/* Animated background effect */}
+                      <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                    </button>
+                  </div>
+                  
+                  {(translatedData?.summary || documentData?.analysis.summary) && (
+                    <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
+                      <p className="text-gray-100 text-lg leading-relaxed">
+                        {translatedData?.summary || documentData?.analysis.summary}
+                      </p>
+                      {translatedData?.summary && currentLanguage !== 'en' && (
+                        <p className="text-sm text-muted-foreground mt-2 italic">
+                          Translated to {SUPPORTED_LANGUAGES[currentLanguage as keyof typeof SUPPORTED_LANGUAGES]}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-4">
-                  {documentData?.analysis?.riskScore !== undefined && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">📊</span>
-                      <div className="text-foreground text-lg">
-                        <p className="font-semibold">{getTranslatedLabel('Risk Score', 'Risk Score:')} {documentData.analysis.riskScore}/100</p>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                          <div 
-                            className={`h-2.5 rounded-full transition-all duration-300 ${
-                              documentData.analysis.riskScore > 70 ? 'bg-red-600' :
-                              documentData.analysis.riskScore > 40 ? 'bg-yellow-500' :
-                              'bg-green-600'
-                            }`}
-                            data-width={documentData.analysis.riskScore}
-                          ></div>
+              </motion.div>
+
+              {/* Key Terms Section */}
+              {(translatedData?.keyPoints || documentData?.analysis?.keyTerms) && Array.isArray(translatedData?.keyPoints || documentData?.analysis?.keyTerms) && (translatedData?.keyPoints || documentData?.analysis?.keyTerms).length > 0 && (
+                <motion.div
+                  className="relative group"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-cyan-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                  <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-indigo-500/20 rounded-xl">
+                          <Search className="h-8 w-8 text-indigo-400" />
                         </div>
-                        <style jsx>{`
-                          div[data-width] {
-                            width: ${documentData.analysis.riskScore}%;
+                        <div>
+                          <h3 className="text-2xl font-bold text-white">
+                            {getTranslatedLabel('Key Terms', 'Key Terms Explained')}
+                          </h3>
+                          <p className="text-gray-400">Important legal terms made simple</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => readText(getSectionContent('keyTerms'), 'keyTerms')}
+                        disabled={isTranslating || isLoadingTTS}
+                        className={`group relative overflow-hidden rounded-lg px-3 py-2 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 backdrop-blur-sm border ${
+                          currentlyReading === 'keyTerms' 
+                            ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400' 
+                            : isLoadingTTS && currentlyReading === 'keyTerms'
+                            ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400'
+                            : 'bg-indigo-500/20 border-indigo-400 text-white hover:bg-indigo-500/30 focus:ring-indigo-400'
+                        }`}
+                        title={
+                          isLoadingTTS && currentlyReading === 'keyTerms' ? 'Loading audio...' :
+                          currentlyReading === 'keyTerms' ? 'Stop reading' : 'Listen to key terms'
+                        }
+                      >
+                        <div className="flex items-center gap-1">
+                          {isLoadingTTS && currentlyReading === 'keyTerms' ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : currentlyReading === 'keyTerms' ? (
+                            <VolumeX className="h-4 w-4" />
+                          ) : (
+                            <Volume2 className="h-4 w-4" />
+                          )}
+                          <span className="text-xs font-medium">
+                            {isLoadingTTS && currentlyReading === 'keyTerms' ? 'Loading...' :
+                             currentlyReading === 'keyTerms' ? 'Stop' : 'Listen'}
+                          </span>
+                        </div>
+                        <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                      </button>
+                    </div>
+                    
+                    <div className="grid gap-4">
+                      {(translatedData?.keyPoints || (documentData?.analysis?.keyTerms ?? [])).map((term: any, index: number) => (
+                        <motion.div
+                          key={index}
+                          className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 hover:border-indigo-500/50 transition-all duration-300"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.4, delay: 0.1 * index }}
+                        >
+                          {typeof term === 'string' ? (
+                            <p className="text-gray-100">{term}</p>
+                          ) : (
+                            <div>
+                              {term.term && (
+                                <h5 className="font-bold text-white text-lg mb-2 flex items-center gap-2">
+                                  <span className="text-indigo-400">📘</span>
+                                  {term.term}
+                                </h5>
+                              )}
+                              <p className="text-gray-300 leading-relaxed mb-3">{term.definition}</p>
+                              {term.importance && (
+                                <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${
+                                  term.importance === 'HIGH' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                                  term.importance === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                                  'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                                }`}>
+                                  <div className={`w-2 h-2 rounded-full mr-2 ${
+                                    term.importance === 'HIGH' ? 'bg-red-400' :
+                                    term.importance === 'MEDIUM' ? 'bg-yellow-400' :
+                                    'bg-gray-400'
+                                  }`}></div>
+                                  {term.importance} PRIORITY
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Risk Analysis - Dashboard Style */}
+              <motion.div
+                className="relative group"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
+                  
+                  {/* Risk Score Dashboard */}
+                  {documentData?.analysis?.riskScore !== undefined && (
+                    <div className="mb-8">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 bg-red-500/20 rounded-xl">
+                            <AlertTriangle className="h-8 w-8 text-red-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-2xl font-bold text-white">
+                              {getTranslatedLabel('Risk Analysis', 'Risk Assessment')}
+                            </h3>
+                            <p className="text-gray-400">AI-powered risk evaluation</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => readText(getSectionContent('risks'), 'risks')}
+                          disabled={isTranslating || isLoadingTTS}
+                          className={`group relative overflow-hidden rounded-xl px-4 py-3 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 backdrop-blur-sm border ${
+                            currentlyReading === 'risks' 
+                              ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400' 
+                              : isLoadingTTS && currentlyReading === 'risks'
+                              ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400'
+                              : 'bg-red-500/20 border-red-400 text-white hover:bg-red-500/30 focus:ring-red-400'
+                          }`}
+                          title={
+                            isLoadingTTS && currentlyReading === 'risks' ? 'Loading audio...' :
+                            currentlyReading === 'risks' ? 'Stop reading' : 'Listen to risk analysis'
                           }
-                        `}</style>
+                        >
+                          <div className="flex items-center gap-2">
+                            {isLoadingTTS && currentlyReading === 'risks' ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : currentlyReading === 'risks' ? (
+                              <VolumeX className="h-5 w-5" />
+                            ) : (
+                              <Volume2 className="h-5 w-5" />
+                            )}
+                            <span className="text-sm font-medium">
+                              {isLoadingTTS && currentlyReading === 'risks' ? 'Loading...' :
+                               currentlyReading === 'risks' ? 'Stop' : 'Listen'}
+                            </span>
+                          </div>
+                          {/* Animated background effect */}
+                          <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                        </button>
+                      </div>
+                      
+                      <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-lg font-semibold text-gray-200">
+                            {getTranslatedLabel('Risk Score', 'Overall Risk Score')}
+                          </span>
+                          <span className="text-3xl font-bold text-white">{documentData.analysis.riskScore}/100</span>
+                        </div>
+                        
+                        <div className="relative w-full bg-gray-700 rounded-full h-4 mb-2">
+                          <motion.div 
+                            className={`h-4 rounded-full ${
+                              documentData.analysis.riskScore > 70 ? 'bg-gradient-to-r from-red-500 to-red-600' :
+                              documentData.analysis.riskScore > 40 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
+                              'bg-gradient-to-r from-green-500 to-green-600'
+                            }`}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${documentData.analysis.riskScore}%` }}
+                            transition={{ duration: 1, delay: 0.5 }}
+                          ></motion.div>
+                        </div>
+                        
+                        <div className="flex justify-between text-sm text-gray-400">
+                          <span>Low Risk</span>
+                          <span>Medium Risk</span>
+                          <span>High Risk</span>
+                        </div>
+                        
+                        <div className="mt-4 p-4 bg-gray-900/50 rounded-lg">
+                          <p className="text-sm text-gray-300">
+                            {documentData.analysis.riskScore > 70 ? '🚨 High risk detected. Review carefully before signing.' :
+                             documentData.analysis.riskScore > 40 ? '⚠️ Moderate risk. Some clauses need attention.' :
+                             '✅ Low risk. Document appears standard.'}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}
+
+                  {/* Key Risks */}
                   {(translatedData?.keyRisks || documentData?.analysis?.keyRisks) && Array.isArray(translatedData?.keyRisks || documentData?.analysis?.keyRisks) && (translatedData?.keyRisks || documentData?.analysis?.keyRisks).length > 0 && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">🔴</span>
-                      <div className="text-foreground text-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <p className="font-semibold">{getTranslatedLabel('Key Risks', 'Key Risks:')}</p>
-                          {translatedData?.keyRisks && currentLanguage !== 'en' && (
-                            <span className="text-sm text-muted-foreground italic">
-                              (Translated to {SUPPORTED_LANGUAGES[currentLanguage as keyof typeof SUPPORTED_LANGUAGES]})
-                            </span>
-                          )}
-                        </div>
-                        <div className="space-y-3">
-                          {(translatedData?.keyRisks || documentData?.analysis?.keyRisks || []).map((risk: any, index: number) => (
-                            <div key={index} className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
-                              {typeof risk === 'string' ? (
-                                <p className="text-red-800">{risk}</p>
-                              ) : (
-                                <div>
+                    <div className="mb-8">
+                      <h4 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <AlertCircle className="h-6 w-6 text-red-400" />
+                        {getTranslatedLabel('Key Risks', 'Key Risk Areas')}
+                      </h4>
+                      
+                      <div className="grid gap-4">
+                        {(translatedData?.keyRisks || documentData?.analysis?.keyRisks || []).map((risk: any, index: number) => (
+                          <motion.div
+                            key={index}
+                            className="bg-gray-800/50 rounded-xl border border-gray-700/50 hover:border-red-500/50 transition-all duration-300 overflow-hidden"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.4, delay: 0.1 * index }}
+                          >
+                            {typeof risk === 'string' ? (
+                              <div className="p-6">
+                                <p className="text-gray-100">{risk}</p>
+                              </div>
+                            ) : (
+                              <div className="p-6">
+                                <div className="flex items-start justify-between mb-3">
                                   {risk.category && (
                                     <h5 className="font-bold text-white text-lg flex items-center gap-2">
                                       <span className="text-red-400">⚠️</span>
@@ -1156,231 +1236,299 @@ export default function AnalysePage() {
                                       {risk.severity}
                                     </span>
                                   )}
-                                  
-                                  <p className="text-gray-300 leading-relaxed mb-4">{risk.description}</p>
-                                  
-                                  {risk.recommendation && (
-                                    <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-4">
-                                      <p className="text-sm text-blue-300 flex items-start gap-2">
-                                        <span className="text-blue-400 mt-0.5">💡</span>
-                                        <span className="font-medium">Recommendation:</span>
-                                      </p>
-                                      <p className="text-sm text-blue-200 mt-1 ml-6">{risk.recommendation}</p>
-                                    </div>
-                                  )}
                                 </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                                
+                                <p className="text-gray-300 leading-relaxed mb-4">{risk.description}</p>
+                                
+                                {risk.recommendation && (
+                                  <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-4">
+                                    <p className="text-sm text-blue-300 flex items-start gap-2">
+                                      <span className="text-blue-400 mt-0.5">💡</span>
+                                      <span className="font-medium">Recommendation:</span>
+                                    </p>
+                                    <p className="text-sm text-blue-200 mt-1 ml-6">{risk.recommendation}</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </motion.div>
+                        ))}
                       </div>
                     </div>
                   )}
+
+                  {/* Recommendations */}
                   {(translatedData?.recommendations || documentData?.analysis?.recommendations) && Array.isArray(translatedData?.recommendations || documentData?.analysis?.recommendations) && (translatedData?.recommendations || documentData?.analysis?.recommendations).length > 0 && (
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-xl">💡</span>
-                      <div className="text-foreground text-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-semibold">{getTranslatedLabel('Recommendations', 'Recommendations:')}</p>
-                          <button
-                            onClick={() => readText(getSectionContent('recommendations'), 'recommendations')}
-                            disabled={isTranslating || isLoadingTTS}
-                            className={`group relative overflow-hidden rounded-lg px-3 py-2 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 shadow-md backdrop-blur-sm border ${
-                              currentlyReading === 'recommendations' 
-                                ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400 shadow-red-200' 
-                                : isLoadingTTS && currentlyReading === 'recommendations'
-                                ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400 shadow-yellow-200'
-                                : 'bg-purple-500/20 border-purple-400 text-white hover:bg-purple-500/30 focus:ring-purple-400 shadow-purple-200'
-                            }`}
-                            title={
-                              isLoadingTTS && currentlyReading === 'recommendations' ? 'Loading audio...' :
-                              currentlyReading === 'recommendations' ? 'Stop reading' : 'Listen to recommendations'
-                            }
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-xl font-bold text-white flex items-center gap-2">
+                          <CheckCircle className="h-6 w-6 text-green-400" />
+                          {getTranslatedLabel('Recommendations', 'Expert Recommendations')}
+                        </h4>
+                        <button
+                          onClick={() => readText(getSectionContent('recommendations'), 'recommendations')}
+                          disabled={isTranslating || isLoadingTTS}
+                          className={`group relative overflow-hidden rounded-lg px-3 py-2 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 backdrop-blur-sm border ${
+                            currentlyReading === 'recommendations' 
+                              ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400' 
+                              : isLoadingTTS && currentlyReading === 'recommendations'
+                              ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400'
+                              : 'bg-green-500/20 border-green-400 text-white hover:bg-green-500/30 focus:ring-green-400'
+                          }`}
+                          title={
+                            isLoadingTTS && currentlyReading === 'recommendations' ? 'Loading audio...' :
+                            currentlyReading === 'recommendations' ? 'Stop reading' : 'Listen to recommendations'
+                          }
+                        >
+                          <div className="flex items-center gap-1">
+                            {isLoadingTTS && currentlyReading === 'recommendations' ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : currentlyReading === 'recommendations' ? (
+                              <VolumeX className="h-4 w-4" />
+                            ) : (
+                              <Volume2 className="h-4 w-4" />
+                            )}
+                            <span className="text-xs font-medium">
+                              {isLoadingTTS && currentlyReading === 'recommendations' ? 'Loading...' :
+                               currentlyReading === 'recommendations' ? 'Stop' : 'Listen'}
+                            </span>
+                          </div>
+                          <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                        </button>
+                      </div>
+                      
+                      <div className="grid gap-3">
+                        {(translatedData?.recommendations || documentData?.analysis?.recommendations || []).map((rec: any, index: number) => (
+                          <motion.div
+                            key={index}
+                            className="bg-green-900/20 border border-green-700/30 rounded-lg p-4 hover:border-green-500/50 transition-all duration-300"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: 0.1 * index }}
                           >
-                            <div className="flex items-center gap-1">
-                              {isLoadingTTS && currentlyReading === 'recommendations' ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : currentlyReading === 'recommendations' ? (
-                                <VolumeX className="h-4 w-4" />
-                              ) : (
-                                <Volume2 className="h-4 w-4" />
-                              )}
-                              <span className="text-xs font-medium">
-                                {isLoadingTTS && currentlyReading === 'recommendations' ? 'Loading...' :
-                                 currentlyReading === 'recommendations' ? 'Stop' : 'Listen'}
-                              </span>
-                            </div>
-                            <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-                          </button>
-                        </div>
-                        <ul className="list-disc list-inside space-y-1">
-                          {(translatedData?.recommendations || documentData?.analysis?.recommendations || []).map((rec: any, index: number) => (
-                            <li key={index}>
+                            <p className="text-green-100 flex items-start gap-3">
+                              <span className="text-green-400 mt-1">✓</span>
                               {typeof rec === 'string' ? rec : rec.description || rec.recommendation || JSON.stringify(rec)}
-                            </li>
-                          ))}
-                        </ul>
+                            </p>
+                          </motion.div>
+                        ))}
                       </div>
                     </div>
                   )}
                 </div>
-              </div>
               </motion.div>
 
-              {/* Obligations and Rights */}
+              {/* Obligations and Rights - Professional Dashboard */}
               {(((translatedData?.obligations || documentData?.analysis?.obligations) && Array.isArray(translatedData?.obligations || documentData?.analysis?.obligations) && (translatedData?.obligations || documentData?.analysis?.obligations).length > 0) || 
                 ((translatedData?.rights || documentData?.analysis?.rights) && Array.isArray(translatedData?.rights || documentData?.analysis?.rights) && (translatedData?.rights || documentData?.analysis?.rights).length > 0)) && (
-                <motion.div
-                  className="grid md:grid-cols-2 gap-6"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 1.0 }}
-                >
+                <div className="grid lg:grid-cols-2 gap-8">
+                  
                   {/* Obligations */}
                   {(translatedData?.obligations || documentData?.analysis?.obligations) && Array.isArray(translatedData?.obligations || documentData?.analysis?.obligations) && (translatedData?.obligations || documentData?.analysis?.obligations).length > 0 && (
-                    <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-2xl font-bold flex items-center gap-3">
-                            <FileText className="h-6 w-6 text-violet-600" />
-                            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-                              {getTranslatedLabel('Your Obligations', '📋 Your Obligations')}
-                            </span>
-                          </h2>
-                          {translatedData?.obligations && currentLanguage !== 'en' && (
-                            <span className="text-sm text-muted-foreground italic">
-                              (Translated to {SUPPORTED_LANGUAGES[currentLanguage as keyof typeof SUPPORTED_LANGUAGES]})
-                            </span>
-                          )}
+                    <motion.div
+                      className="relative group"
+                      initial={{ opacity: 0, x: -30 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.6, delay: 0.8 }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                      <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
+                        
+                        <div className="flex items-center justify-between mb-8">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 bg-orange-500/20 rounded-xl">
+                              <BookOpen className="h-8 w-8 text-orange-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-2xl font-bold text-white">
+                                {getTranslatedLabel('Your Obligations', 'Your Obligations')}
+                              </h3>
+                              <p className="text-gray-400">Legal responsibilities and duties</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => readText(getSectionContent('obligations'), 'obligations')}
+                            disabled={isTranslating || isLoadingTTS}
+                            className={`group relative overflow-hidden rounded-xl px-4 py-3 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 backdrop-blur-sm border ${
+                              currentlyReading === 'obligations' 
+                                ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400' 
+                                : isLoadingTTS && currentlyReading === 'obligations'
+                                ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400'
+                                : 'bg-orange-500/20 border-orange-400 text-white hover:bg-orange-500/30 focus:ring-orange-400'
+                            }`}
+                            title={
+                              isLoadingTTS && currentlyReading === 'obligations' ? 'Loading audio...' :
+                              currentlyReading === 'obligations' ? 'Stop reading' : 'Listen to obligations'
+                            }
+                          >
+                            <div className="flex items-center gap-2">
+                              {isLoadingTTS && currentlyReading === 'obligations' ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              ) : currentlyReading === 'obligations' ? (
+                                <VolumeX className="h-5 w-5" />
+                              ) : (
+                                <Volume2 className="h-5 w-5" />
+                              )}
+                              <span className="text-sm font-medium">
+                                {isLoadingTTS && currentlyReading === 'obligations' ? 'Loading...' :
+                                 currentlyReading === 'obligations' ? 'Stop' : 'Listen'}
+                              </span>
+                            </div>
+                            {/* Animated background effect */}
+                            <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                          </button>
                         </div>
-                        <button
-                          onClick={() => readText(getSectionContent('obligations'), 'obligations')}
-                          disabled={isTranslating || isLoadingTTS}
-                          className={`group relative overflow-hidden rounded-xl px-4 py-3 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg backdrop-blur-sm border ${
-                            currentlyReading === 'obligations' 
-                              ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400 shadow-red-200' 
-                              : isLoadingTTS && currentlyReading === 'obligations'
-                              ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400 shadow-yellow-200'
-                              : 'bg-orange-500/20 border-orange-400 text-white hover:bg-orange-500/30 focus:ring-orange-400 shadow-orange-200'
-                          }`}
-                          title={
-                            isLoadingTTS && currentlyReading === 'obligations' ? 'Loading audio...' :
-                            currentlyReading === 'obligations' ? 'Stop reading' : 'Listen to obligations'
-                          }
-                        >
-                          <div className="flex items-center gap-2">
-                            {isLoadingTTS && currentlyReading === 'obligations' ? (
-                              <Loader2 className="h-5 w-5 animate-spin" />
-                            ) : currentlyReading === 'obligations' ? (
-                              <VolumeX className="h-5 w-5" />
-                            ) : (
-                              <Volume2 className="h-5 w-5" />
-                            )}
-                            <span className="text-sm font-medium">
-                              {isLoadingTTS && currentlyReading === 'obligations' ? 'Loading...' :
-                               currentlyReading === 'obligations' ? 'Stop' : 'Listen'}
-                            </span>
-                          </div>
-                          {/* Animated background effect */}
-                          <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-                        </button>
+                        
+                        <div className="space-y-4">
+                          {(translatedData?.obligations || documentData?.analysis?.obligations || []).map((obligation: any, index: number) => (
+                            <motion.div
+                              key={index}
+                              className="bg-gray-800/50 border border-gray-700/50 rounded-xl hover:border-orange-500/50 transition-all duration-300 overflow-hidden"
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, delay: 0.1 * index }}
+                            >
+                              {typeof obligation === 'string' ? (
+                                <div className="p-6">
+                                  <div className="flex items-start gap-4">
+                                    <div className="flex-shrink-0 w-8 h-8 bg-orange-600/20 rounded-full flex items-center justify-center mt-1">
+                                      <span className="text-orange-400 font-bold text-sm">{index + 1}</span>
+                                    </div>
+                                    <p className="text-gray-100 leading-relaxed">{obligation}</p>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="p-6">
+                                  <div className="flex items-start gap-4">
+                                    <div className="flex-shrink-0 w-8 h-8 bg-orange-600/20 rounded-full flex items-center justify-center mt-1">
+                                      <span className="text-orange-400 font-bold text-sm">{index + 1}</span>
+                                    </div>
+                                    <div className="flex-1">
+                                      {obligation.party && (
+                                        <h5 className="font-bold text-white text-lg mb-2 flex items-center gap-2">
+                                          <span className="text-orange-400">⚖️</span>
+                                          {obligation.party}
+                                        </h5>
+                                      )}
+                                      <p className="text-gray-300 leading-relaxed mb-3">{obligation.description}</p>
+                                      {obligation.deadline && (
+                                        <div className="inline-flex items-center gap-2 px-3 py-2 bg-orange-900/20 border border-orange-700/30 rounded-lg">
+                                          <Clock className="h-4 w-4 text-orange-400" />
+                                          <span className="text-orange-300 text-sm font-medium">
+                                            Deadline: {obligation.deadline}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </motion.div>
+                          ))}
+                        </div>
                       </div>
-                      <div className="space-y-3">
-                        {(translatedData?.obligations || documentData?.analysis?.obligations || []).map((obligation: any, index: number) => (
-                          <div key={index} className="bg-orange-50 border border-orange-200 rounded p-3">
-                            {typeof obligation === 'string' ? (
-                              <div className="flex items-start gap-3">
-                                <span className="text-xl">⚖️</span>
-                                <p className="text-foreground">{obligation}</p>
-                              </div>
-                            ) : (
-                              <div>
-                                {obligation.party && (
-                                  <h5 className="font-semibold text-orange-900 mb-1">{obligation.party}</h5>
-                                )}
-                                <p className="text-orange-800 mb-1">{obligation.description}</p>
-                                {obligation.deadline && (
-                                  <p className="text-sm text-orange-700">⏰ Deadline: {obligation.deadline}</p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    </motion.div>
                   )}
                   
                   {/* Rights */}
                   {(translatedData?.rights || documentData?.analysis?.rights) && Array.isArray(translatedData?.rights || documentData?.analysis?.rights) && (translatedData?.rights || documentData?.analysis?.rights).length > 0 && (
-                    <div className="bg-card backdrop-blur-sm rounded-lg p-6 border border-border">
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-2xl font-bold flex items-center gap-3">
-                            <FileText className="h-6 w-6 text-violet-600" />
-                            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-                              {getTranslatedLabel('Your Rights', '✅ Your Rights')}
-                            </span>
-                          </h2>
-                          {translatedData?.rights && currentLanguage !== 'en' && (
-                            <span className="text-sm text-muted-foreground italic">
-                              (Translated to {SUPPORTED_LANGUAGES[currentLanguage as keyof typeof SUPPORTED_LANGUAGES]})
-                            </span>
-                          )}
+                    <motion.div
+                      className="relative group"
+                      initial={{ opacity: 0, x: 30 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.6, delay: 1.0 }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                      <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:border-gray-600/50">
+                        
+                        <div className="flex items-center justify-between mb-8">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 bg-green-500/20 rounded-xl">
+                              <Shield className="h-8 w-8 text-green-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-2xl font-bold text-white">
+                                {getTranslatedLabel('Your Rights', 'Your Rights')}
+                              </h3>
+                              <p className="text-gray-400">Legal protections and entitlements</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => readText(getSectionContent('rights'), 'rights')}
+                            disabled={isTranslating || isLoadingTTS}
+                            className={`group relative overflow-hidden rounded-xl px-4 py-3 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 backdrop-blur-sm border ${
+                              currentlyReading === 'rights' 
+                                ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400' 
+                                : isLoadingTTS && currentlyReading === 'rights'
+                                ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400'
+                                : 'bg-green-500/20 border-green-400 text-white hover:bg-green-500/30 focus:ring-green-400'
+                            }`}
+                            title={
+                              isLoadingTTS && currentlyReading === 'rights' ? 'Loading audio...' :
+                              currentlyReading === 'rights' ? 'Stop reading' : 'Listen to rights'
+                            }
+                          >
+                            <div className="flex items-center gap-2">
+                              {isLoadingTTS && currentlyReading === 'rights' ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              ) : currentlyReading === 'rights' ? (
+                                <VolumeX className="h-5 w-5" />
+                              ) : (
+                                <Volume2 className="h-5 w-5" />
+                              )}
+                              <span className="text-sm font-medium">
+                                {isLoadingTTS && currentlyReading === 'rights' ? 'Loading...' :
+                                 currentlyReading === 'rights' ? 'Stop' : 'Listen'}
+                              </span>
+                            </div>
+                            {/* Animated background effect */}
+                            <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                          </button>
                         </div>
-                        <button
-                          onClick={() => readText(getSectionContent('rights'), 'rights')}
-                          disabled={isTranslating || isLoadingTTS}
-                          className={`group relative overflow-hidden rounded-xl px-4 py-3 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg backdrop-blur-sm border ${
-                            currentlyReading === 'rights' 
-                              ? 'bg-red-500/20 border-red-400 text-white focus:ring-red-400 shadow-red-200' 
-                              : isLoadingTTS && currentlyReading === 'rights'
-                              ? 'bg-yellow-400/20 border-yellow-400 text-white focus:ring-yellow-400 shadow-yellow-200'
-                              : 'bg-green-500/20 border-green-400 text-white hover:bg-green-500/30 focus:ring-green-400 shadow-green-200'
-                          }`}
-                          title={
-                            isLoadingTTS && currentlyReading === 'rights' ? 'Loading audio...' :
-                            currentlyReading === 'rights' ? 'Stop reading' : 'Listen to rights'
-                          }
-                        >
-                          <div className="flex items-center gap-2">
-                            {isLoadingTTS && currentlyReading === 'rights' ? (
-                              <Loader2 className="h-5 w-5 animate-spin" />
-                            ) : currentlyReading === 'rights' ? (
-                              <VolumeX className="h-5 w-5" />
-                            ) : (
-                              <Volume2 className="h-5 w-5" />
-                            )}
-                            <span className="text-sm font-medium">
-                              {isLoadingTTS && currentlyReading === 'rights' ? 'Loading...' :
-                               currentlyReading === 'rights' ? 'Stop' : 'Listen'}
-                            </span>
-                          </div>
-                          {/* Animated background effect */}
-                          <div className="absolute inset-0 bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-                        </button>
+                        
+                        <div className="space-y-4">
+                          {(translatedData?.rights || documentData?.analysis?.rights || []).map((right: any, index: number) => (
+                            <motion.div
+                              key={index}
+                              className="bg-gray-800/50 border border-gray-700/50 rounded-xl hover:border-green-500/50 transition-all duration-300 overflow-hidden"
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, delay: 0.1 * index }}
+                            >
+                              {typeof right === 'string' ? (
+                                <div className="p-6">
+                                  <div className="flex items-start gap-4">
+                                    <div className="flex-shrink-0 w-8 h-8 bg-green-600/20 rounded-full flex items-center justify-center mt-1">
+                                      <span className="text-green-400 font-bold text-sm">{index + 1}</span>
+                                    </div>
+                                    <p className="text-gray-100 leading-relaxed">{right}</p>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="p-6">
+                                  <div className="flex items-start gap-4">
+                                    <div className="flex-shrink-0 w-8 h-8 bg-green-600/20 rounded-full flex items-center justify-center mt-1">
+                                      <span className="text-green-400 font-bold text-sm">{index + 1}</span>
+                                    </div>
+                                    <div className="flex-1">
+                                      {right.party && (
+                                        <h5 className="font-bold text-white text-lg mb-2 flex items-center gap-2">
+                                          <span className="text-green-400">🛡️</span>
+                                          {right.party}
+                                        </h5>
+                                      )}
+                                      <p className="text-gray-300 leading-relaxed">{right.description}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </motion.div>
+                          ))}
+                        </div>
                       </div>
-                      <div className="space-y-3">
-                        {(translatedData?.rights || documentData?.analysis?.rights || []).map((right: any, index: number) => (
-                          <div key={index} className="bg-green-50 border border-green-200 rounded p-3">
-                            {typeof right === 'string' ? (
-                              <div className="flex items-start gap-3">
-                                <span className="text-xl">🛡️</span>
-                                <p className="text-foreground">{right}</p>
-                              </div>
-                            ) : (
-                              <div>
-                                {right.party && (
-                                  <h5 className="font-semibold text-green-900 mb-1">{right.party}</h5>
-                                )}
-                                <p className="text-green-800">{right.description}</p>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    </motion.div>
                   )}
-                </motion.div>
+                </div>
               )}
 
               {/* Q&A Section - Premium Chat Interface */}
@@ -1391,7 +1539,7 @@ export default function AnalysePage() {
                 transition={{ duration: 0.6, delay: 1.2 }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-500/20 to-purple-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl shadow-2xl transition-all duration-300 hover:border-gray-600/50">
+                <div className="relative border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl transition-all duration-300 hover:border-gray-600/50">
                   
                   {/* Header */}
                   <div className="p-8 border-b border-gray-700/50">
@@ -1415,7 +1563,7 @@ export default function AnalysePage() {
                           <div className="w-16 h-16 bg-violet-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Bot className="h-8 w-8 text-violet-400" />
                           </div>
-                          <h4 className="text-xl font-semibold text-white mb-4">💡 Try asking questions like:</h4>
+                          <h4 className="text-xl font-semibold text-white mb-4">Try asking questions like:</h4>
                           <div className="grid gap-4 max-w-2xl mx-auto">
                             <motion.div 
                               className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 hover:border-violet-500/50 transition-all duration-300 cursor-pointer"
@@ -1452,11 +1600,11 @@ export default function AnalysePage() {
                           {/* Avatar */}
                           <div className="flex-shrink-0">
                             {msg.role === 'user' ? (
-                              <div className="w-10 h-10 bg-gradient-to-r from-violet-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                              <div className="w-10 h-10 bg-gradient-to-r from-violet-600 to-purple-600 rounded-full flex items-center justify-center">
                                 <User className="w-5 h-5 text-white" />
                               </div>
                             ) : (
-                              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
+                              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full flex items-center justify-center">
                                 <Bot className="w-5 h-5 text-white" />
                               </div>
                             )}
@@ -1476,7 +1624,7 @@ export default function AnalysePage() {
                                 </>
                               )}
                             </div>
-                            <div className={`rounded-xl p-4 leading-relaxed shadow-lg ${
+                            <div className={`rounded-xl p-4 leading-relaxed ${
                               msg.role === 'user' 
                                 ? 'bg-gradient-to-r from-violet-600/20 to-purple-600/20 border border-violet-500/30 text-gray-100' 
                                 : 'bg-gradient-to-r from-gray-800/50 to-gray-700/50 border border-gray-600/30 text-gray-100'
@@ -1559,7 +1707,7 @@ export default function AnalysePage() {
                       setUploadedFile(null)
                       setChatMessages([])
                     }}
-                    className="relative px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-2xl font-semibold text-lg hover:from-violet-700 hover:to-purple-700 transition-all duration-300 shadow-2xl border border-violet-500/30"
+                    className="relative px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-2xl font-semibold text-lg hover:from-violet-700 hover:to-purple-700 transition-all duration-300 border border-violet-500/30"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
