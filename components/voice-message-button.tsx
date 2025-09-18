@@ -77,15 +77,30 @@ export function VoiceMessageButton({
   const checkBrowserSupport = () => {
     const hasMediaRecorder = 'MediaRecorder' in window;
     const hasSpeechRecognition = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isChrome = /Chrome/i.test(navigator.userAgent);
+    const isSecureContext = window.isSecureContext || location.protocol === 'https:';
+    
+    console.log('🎤 Browser detection:', { 
+      hasMediaRecorder, 
+      hasSpeechRecognition, 
+      isMobile, 
+      isChrome, 
+      isSecureContext,
+      userAgent: navigator.userAgent
+    });
     
     if (!hasMediaRecorder) {
       throw new Error('Audio recording not supported in this browser');
     }
     if (!hasSpeechRecognition) {
-      console.warn('Speech recognition not supported in this browser');
+      console.warn('Speech recognition not supported in this browser - will use Google Cloud API');
+    }
+    if (isMobile && !isSecureContext) {
+      throw new Error('Voice recording requires HTTPS on mobile devices');
     }
     
-    return { hasMediaRecorder, hasSpeechRecognition };
+    return { hasMediaRecorder, hasSpeechRecognition, isMobile, isChrome };
   };
 
   const startTimer = () => {
@@ -111,7 +126,7 @@ export function VoiceMessageButton({
   const startRecording = async () => {
     try {
       console.log('🎤 Starting voice recording...');
-      const { hasMediaRecorder, hasSpeechRecognition } = checkBrowserSupport();
+      const { hasMediaRecorder, hasSpeechRecognition, isMobile, isChrome } = checkBrowserSupport();
       console.log('🎤 Browser support - MediaRecorder:', hasMediaRecorder, 'SpeechRecognition:', hasSpeechRecognition);
       
       setError(null);
@@ -121,42 +136,85 @@ export function VoiceMessageButton({
       setAudioUrl(null);
       audioChunksRef.current = [];
 
-      // Get microphone permission and start audio recording
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      // Mobile-specific constraints - more conservative audio settings
+      const audioConstraints = isMobile ? {
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 16000, // Lower sample rate for mobile
+          sampleSize: 16,
+          channelCount: 1, // Mono for mobile
+        }
+      } : {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           sampleRate: 44100,
-        } 
-      });
+        }
+      };
+
+      console.log('🎤 Requesting microphone permission with constraints:', audioConstraints);
+
+      // Get microphone permission and start audio recording
+      const stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
       
       streamRef.current = stream;
+      console.log('🎤 Microphone access granted, stream active:', stream.active);
 
-      // Start audio recording
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
-      });
+      // Start audio recording with mobile-compatible MIME types
+      let mimeType = 'audio/webm';
+      if (isMobile) {
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          mimeType = 'audio/webm;codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+        } else if (MediaRecorder.isTypeSupported('audio/aac')) {
+          mimeType = 'audio/aac';
+        } else {
+          mimeType = ''; // Let browser choose
+        }
+      } else {
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          mimeType = 'audio/webm;codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+          mimeType = 'audio/webm';
+        }
+      }
+
+      console.log('🎤 Using MIME type:', mimeType);
+
+      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
       
       mediaRecorderRef.current = mediaRecorder;
 
       mediaRecorder.ondataavailable = (event) => {
+        console.log('🎤 Audio data available, size:', event.data.size);
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
 
       mediaRecorder.onstop = () => {
+        console.log('🎤 MediaRecorder stopped, creating blob');
         const audioBlob = new Blob(audioChunksRef.current, { 
           type: mediaRecorder.mimeType 
         });
+        console.log('🎤 Audio blob created, size:', audioBlob.size);
         setAudioBlob(audioBlob);
         setAudioUrl(URL.createObjectURL(audioBlob));
       };
 
-      mediaRecorder.start(1000); // Collect data every second
+      mediaRecorder.onerror = (event) => {
+        console.error('🎤 MediaRecorder error:', event);
+        setError('Recording failed');
+      };
 
-      // Start speech recognition if supported
-      if (hasSpeechRecognition) {
+      mediaRecorder.start(isMobile ? 2000 : 1000); // Collect data less frequently on mobile
+
+      // Start speech recognition if supported (with mobile-specific handling)
+      if (hasSpeechRecognition && !isMobile) {
+        // On desktop, use browser speech recognition
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
         
@@ -222,25 +280,33 @@ export function VoiceMessageButton({
         };
 
         recognitionRef.current = recognition;
-        recognition.start();
+        
+        try {
+          recognition.start();
+          console.log('🎤 Browser speech recognition started');
+        } catch (err) {
+          console.error('Failed to start browser speech recognition:', err);
+          // Continue without browser recognition - will use Google Cloud API
+        }
+      } else if (isMobile) {
+        console.log('🎤 Mobile device detected - will use Google Cloud API for speech recognition');
+        // On mobile, skip browser speech recognition and rely entirely on Google Cloud API
+        // This is more reliable due to mobile browser limitations
       }
 
       startTimer();
       
       toast({
         title: "Recording started",
-        description: hasSpeechRecognition 
-          ? "Speak clearly into your microphone" 
-          : "Recording audio only - speech recognition unavailable",
+        description: isMobile 
+          ? "Speak clearly - will process with AI after recording" 
+          : hasSpeechRecognition 
+            ? "Speak clearly into your microphone" 
+            : "Recording audio only - speech recognition unavailable",
         variant: "default"
       });
 
-      // Test immediate speech recognition
-      if (hasSpeechRecognition) {
-        setTimeout(() => {
-          console.log('🎤 Testing speech recognition after 2 seconds...');
-        }, 2000);
-      }
+      console.log('🎤 Recording started successfully');
 
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -278,11 +344,15 @@ export function VoiceMessageButton({
       streamRef.current = null;
     }
 
-    // Process with Google Cloud API if no browser transcript
+    // Process with Google Cloud API if no browser transcript or if on mobile
     setTimeout(async () => {
-      if (!transcript.trim() && audioBlob) {
+      // On mobile, always use Google Cloud API since browser recognition is unreliable
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const shouldUseGoogleAPI = !transcript.trim() || isMobileDevice;
+      
+      if (shouldUseGoogleAPI && audioBlob) {
         try {
-          console.log('No browser transcript available, trying Google Cloud API...');
+          console.log('Processing with Google Cloud API...');
           await processWithGoogleCloudAPI();
         } catch (error) {
           console.error('Google Cloud API processing failed:', error);
@@ -299,7 +369,7 @@ export function VoiceMessageButton({
       if (autoSend && transcript.trim()) {
         handleSend();
       }
-    }, 1000);
+    }, /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? 1500 : 1000); // Give mobile a bit more time
 
     toast({
       title: "Recording completed",
@@ -315,47 +385,70 @@ export function VoiceMessageButton({
 
     try {
       console.log('🎤 Processing speech with Google Cloud...');
+      console.log('🎤 Audio blob details:', {
+        size: audioBlob.size,
+        type: audioBlob.type
+      });
       
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'speech.webm');
+      // Determine filename based on MIME type
+      let filename = 'speech.webm';
+      if (audioBlob.type.includes('mp4')) {
+        filename = 'speech.mp4';
+      } else if (audioBlob.type.includes('aac')) {
+        filename = 'speech.aac';
+      } else if (audioBlob.type.includes('opus')) {
+        filename = 'speech.opus';
+      }
+      
+      formData.append('audio', audioBlob, filename);
       formData.append('language', language);
+      formData.append('isMobile', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent).toString());
+      
+      console.log('🎤 Sending request to speech-to-text API...');
       
       const response = await fetch('/api/speech-to-text', {
         method: 'POST',
         body: formData,
       });
       
+      console.log('🎤 Response status:', response.status);
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('🎤 API error response:', errorText);
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
       const result = await response.json();
-      console.log('Speech-to-text result:', result);
+      console.log('🎤 Speech-to-text result:', result);
       
       if (result.success && result.transcription) {
         console.log('✅ Speech transcribed:', result.transcription);
         setTranscript(result.transcription);
         
-        // Show confidence feedback
-        if (result.confidence < 0.8) {
-          toast({
-            title: "Speech processed",
-            description: `Transcribed with ${Math.round(result.confidence * 100)}% confidence`,
-            variant: "default"
-          });
-        }
+        toast({
+          title: "Voice message ready!",
+          description: result.confidence && result.confidence < 0.8 
+            ? `Transcribed with ${Math.round(result.confidence * 100)}% confidence`
+            : "Speech successfully converted to text",
+          variant: "default"
+        });
       } else {
         throw new Error(result.error || 'Speech recognition failed');
       }
     } catch (error) {
-      console.error('Google Cloud Speech API error:', error);
+      console.error('🎤 Google Cloud Speech API error:', error);
       
-      // Final fallback - let user know they can type instead
-      setError('Network error - please type your message');
+      // Provide more helpful error messages for mobile users
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setError('Voice recognition failed');
       
       toast({
-        title: "Voice recognition unavailable",
-        description: "Network error. Please type your message instead.",
+        title: "Voice recognition failed",
+        description: isMobileDevice 
+          ? "Please try speaking closer to your device's microphone, or type your message instead"
+          : "Network error. Please type your message instead.",
         variant: "destructive"
       });
     }
@@ -407,11 +500,13 @@ export function VoiceMessageButton({
   `;
 
   const getButtonContent = () => {
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
     if (isProcessing) {
       return (
         <>
           <Loader2 className="h-4 w-4 animate-spin text-white" />
-          {showLabel && <span className="text-white text-sm hidden sm:inline">Processing...</span>}
+          {showLabel && <span className="text-white text-sm hidden sm:inline">{isMobileDevice ? 'AI Processing...' : 'Processing...'}</span>}
         </>
       );
     }
@@ -450,7 +545,7 @@ export function VoiceMessageButton({
     return (
       <>
         <Mic className="h-4 w-4 text-white/80" />
-        {showLabel && <span className="text-white text-sm hidden sm:inline">Voice</span>}
+        {showLabel && <span className="text-white text-sm hidden sm:inline">{isMobileDevice ? 'Speak' : 'Voice'}</span>}
       </>
     );
   };

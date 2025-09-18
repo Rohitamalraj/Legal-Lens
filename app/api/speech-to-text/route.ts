@@ -23,9 +23,13 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const audioFile = formData.get('audio') as File;
     const language = formData.get('language') as string || 'en-US';
+    const isMobile = formData.get('isMobile') === 'true';
     
     console.log('Audio file received:', !!audioFile);
     console.log('Language:', language);
+    console.log('Is mobile request:', isMobile);
+    console.log('Audio file type:', audioFile?.type);
+    console.log('Audio file name:', audioFile?.name);
     
     if (!audioFile) {
       console.error('No audio file provided');
@@ -43,20 +47,31 @@ export async function POST(request: NextRequest) {
     console.log('Audio file size:', audioBuffer.length);
     console.log('Language:', language);
 
-    // Determine audio encoding based on file type/content
+    // Determine audio encoding based on file type/content and mobile status
     let encoding: 'WEBM_OPUS' | 'OGG_OPUS' | 'MP3' | 'LINEAR16' = 'WEBM_OPUS';
-    let sampleRateHertz = 48000;
+    let sampleRateHertz = isMobile ? 16000 : 48000; // Lower sample rate for mobile
     
-    // Try to detect format from MIME type
-    if (audioFile.type.includes('mp3')) {
+    // Detect format from MIME type with mobile-specific handling
+    if (audioFile.type.includes('mp4') || audioFile.name.includes('.mp4')) {
+      // For MP4, use LINEAR16 encoding which works better
+      encoding = 'LINEAR16';
+      sampleRateHertz = isMobile ? 16000 : 44100;
+    } else if (audioFile.type.includes('aac') || audioFile.name.includes('.aac')) {
+      // For AAC, also use LINEAR16
+      encoding = 'LINEAR16';
+      sampleRateHertz = isMobile ? 16000 : 44100;
+    } else if (audioFile.type.includes('mp3') || audioFile.name.includes('.mp3')) {
       encoding = 'MP3';
       sampleRateHertz = 44100;
-    } else if (audioFile.type.includes('ogg')) {
+    } else if (audioFile.type.includes('ogg') || audioFile.name.includes('.ogg')) {
       encoding = 'OGG_OPUS';
+    } else if (audioFile.type.includes('opus')) {
+      encoding = 'WEBM_OPUS';
     }
     
     console.log('Detected audio encoding:', encoding);
     console.log('Sample rate:', sampleRateHertz);
+    console.log('Mobile optimized:', isMobile);
 
     // Configure the speech recognition request
     const request_config = {
@@ -68,8 +83,10 @@ export async function POST(request: NextRequest) {
         sampleRateHertz,
         languageCode: language,
         enableAutomaticPunctuation: true,
-        model: 'latest_short', // Better for shorter audio clips
+        model: isMobile ? 'phone_call' : 'latest_short', // Use phone_call model for mobile
         useEnhanced: true, // Use enhanced model if available
+        maxAlternatives: 1, // Only need the best result
+        profanityFilter: false,
       },
     };
 
