@@ -92,10 +92,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if document exists and return basic info
-    const document = getLegalDocumentService().getProcessedDocument(documentId);
-    
-    if (!document) {
+      // Check if document exists and return basic info
+      const document = getLegalDocumentService().getProcessedDocumentSync(documentId);    if (!document) {
       return NextResponse.json(
         { error: 'Document not found' },
         { status: 404 }

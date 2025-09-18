@@ -1,6 +1,7 @@
 import { DocumentAIService, DocumentProcessingResult } from './document-ai';
 import { vertexAIService, VertexAIService, LegalAnalysisResult, ChatResponse } from './vertex-ai';
 import DocumentStore from './document-store';
+import { firestoreService } from './firestore-service';
 
 export interface ProcessedDocument {
   id: string;
@@ -99,8 +100,16 @@ export class LegalDocumentService {
         fileBuffer: undefined // Store buffer only if needed to save memory
       };
 
-      // Store for future reference
+      // Store for future reference (in-memory for immediate access)
       this.documentStore.set(documentId, processedDocument);
+      
+      // Store in Firestore for persistence across serverless invocations
+      try {
+        await firestoreService.storeDocument(processedDocument);
+        console.log('✅ Document stored in Firestore successfully');
+      } catch (firestoreError) {
+        console.error('⚠️ Failed to store in Firestore, continuing with in-memory storage:', firestoreError);
+      }
 
       console.log(`Document processing completed successfully: ${documentId}`);
       return processedDocument;
@@ -180,8 +189,26 @@ export class LegalDocumentService {
       console.log('Total processed documents in memory:', this.documentStore.size());
       console.log('Available document IDs:', Array.from(this.documentStore.keys()));
       
-      const document = this.documentStore.get(documentId);
-      console.log('Document found:', !!document);
+      let document = this.documentStore.get(documentId);
+      console.log('Document found in memory:', !!document);
+      
+      // If not found in memory, try Firestore
+      if (!document) {
+        console.log('🔍 Document not in memory, checking Firestore...');
+        try {
+          const firestoreDoc = await firestoreService.getDocument(documentId);
+          document = firestoreDoc || undefined;
+          console.log('Document found in Firestore:', !!document);
+          
+          // If found in Firestore, add back to memory for faster access
+          if (document) {
+            this.documentStore.set(documentId, document);
+            console.log('✅ Document restored to memory from Firestore');
+          }
+        } catch (firestoreError) {
+          console.error('⚠️ Failed to retrieve from Firestore:', firestoreError);
+        }
+      }
       
       // If document not found in store but we have fallback text, use it
       if (!document && fallbackDocumentText) {
@@ -246,7 +273,32 @@ export class LegalDocumentService {
   /**
    * Get processed document by ID
    */
-  getProcessedDocument(documentId: string): ProcessedDocument | null {
+  async getProcessedDocument(documentId: string): Promise<ProcessedDocument | null> {
+    // First check in-memory store
+    let document = this.documentStore.get(documentId);
+    
+    if (!document) {
+      // If not in memory, check Firestore
+      try {
+        const firestoreDoc = await firestoreService.getDocument(documentId);
+        document = firestoreDoc || undefined;
+        
+        // If found in Firestore, add back to memory
+        if (document) {
+          this.documentStore.set(documentId, document);
+        }
+      } catch (error) {
+        console.error('Error retrieving document from Firestore:', error);
+      }
+    }
+    
+    return document || null;
+  }
+
+  /**
+   * Get processed document by ID (sync version for backward compatibility)
+   */
+  getProcessedDocumentSync(documentId: string): ProcessedDocument | null {
     return this.documentStore.get(documentId) || null;
   }
 
