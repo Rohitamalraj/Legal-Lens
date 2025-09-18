@@ -2,35 +2,15 @@
 
 import type { Metadata } from "next";
 import { useState, useCallback } from 'react'
-import dynamic from "next/dynamic";
 import { SiteHeader } from "@/components/site-header";
 import { useRouter } from 'next/navigation'
 import { apiService } from '@/lib/api'
-
-// Lazy load components
-const Footer = dynamic(() => import("@/components/footer").then(mod => ({ default: mod.Footer })), {
-  loading: () => <div className="h-32 bg-gray-100 animate-pulse"></div>
-});
-
-const FileUploadZone = dynamic(() => import('@/components/file-upload-zone').then(mod => ({ default: mod.FileUploadZone })), {
-  loading: () => <div className="h-64 border-2 border-dashed border-gray-300 rounded-lg animate-pulse flex items-center justify-center">Loading upload zone...</div>
-});
-
-const SupportedFormats = dynamic(() => import('@/components/supported-formats').then(mod => ({ default: mod.SupportedFormats })), {
-  loading: () => <div className="h-32 animate-pulse bg-gray-100 rounded-lg"></div>
-});
-
-const DocumentUploadSuccess = dynamic(() => import('@/components/document-upload-success').then(mod => ({ default: mod.DocumentUploadSuccess })), {
-  loading: () => <div className="h-40 animate-pulse bg-gray-100 rounded-lg"></div>
-});
-
-const UploadError = dynamic(() => import('@/components/upload-error').then(mod => ({ default: mod.UploadError })), {
-  loading: () => <div className="h-20 animate-pulse bg-red-100 rounded-lg"></div>
-});
-
-const WorkflowProgress = dynamic(() => import('@/components/workflow-progress').then(mod => ({ default: mod.WorkflowProgress })), {
-  loading: () => <div className="h-16 animate-pulse bg-blue-100 rounded-lg"></div>
-});
+import { Footer } from "@/components/footer"
+import { FileUploadZone } from '@/components/file-upload-zone'
+import { SupportedFormats } from '@/components/supported-formats'
+import { DocumentUploadSuccess } from '@/components/document-upload-success'
+import { UploadError } from '@/components/upload-error'
+import { WorkflowProgress } from '@/components/workflow-progress'
 
 interface UploadedFile {
   file: File

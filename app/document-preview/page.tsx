@@ -2,19 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import dynamic from "next/dynamic"
 import { SiteHeader } from "@/components/site-header"
 import { Button } from '@/components/ui/button'
 import { FileText, ArrowRight, ChevronLeft, ChevronUp, ChevronDown } from 'lucide-react'
-
-// Lazy load components
-const Footer = dynamic(() => import("@/components/footer").then(mod => ({ default: mod.Footer })), {
-  loading: () => <div className="h-32 bg-gray-100 animate-pulse"></div>
-});
-
-const WorkflowProgress = dynamic(() => import('@/components/workflow-progress').then(mod => ({ default: mod.WorkflowProgress })), {
-  loading: () => <div className="h-16 animate-pulse bg-blue-100 rounded-lg"></div>
-});
+import { Footer } from "@/components/footer"
+import { WorkflowProgress } from '@/components/workflow-progress'
 
 interface DocumentData {
   id: string

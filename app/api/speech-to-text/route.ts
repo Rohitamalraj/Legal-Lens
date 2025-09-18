@@ -4,6 +4,12 @@ import { SpeechClient } from '@google-cloud/speech';
 
 // Initialize the Google Cloud Speech client
 const googleCloudConfig = GoogleCloudConfig.getInstance();
+
+// Validate required environment variables
+if (!process.env.GOOGLE_CLOUD_PROJECT_ID) {
+  console.error('GOOGLE_CLOUD_PROJECT_ID environment variable is not set');
+}
+
 const speechClient = new SpeechClient({
   projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
   credentials: googleCloudConfig.getCredentials(),
@@ -12,12 +18,17 @@ const speechClient = new SpeechClient({
 export async function POST(request: NextRequest) {
   try {
     console.log('=== SPEECH-TO-TEXT API ENDPOINT ===');
+    console.log('Request received at:', new Date().toISOString());
     
     const formData = await request.formData();
     const audioFile = formData.get('audio') as File;
     const language = formData.get('language') as string || 'en-US';
     
+    console.log('Audio file received:', !!audioFile);
+    console.log('Language:', language);
+    
     if (!audioFile) {
+      console.error('No audio file provided');
       return NextResponse.json(
         { error: 'Audio file is required' },
         { status: 400 }
@@ -32,17 +43,32 @@ export async function POST(request: NextRequest) {
     console.log('Audio file size:', audioBuffer.length);
     console.log('Language:', language);
 
+    // Determine audio encoding based on file type/content
+    let encoding: 'WEBM_OPUS' | 'OGG_OPUS' | 'MP3' | 'LINEAR16' = 'WEBM_OPUS';
+    let sampleRateHertz = 48000;
+    
+    // Try to detect format from MIME type
+    if (audioFile.type.includes('mp3')) {
+      encoding = 'MP3';
+      sampleRateHertz = 44100;
+    } else if (audioFile.type.includes('ogg')) {
+      encoding = 'OGG_OPUS';
+    }
+    
+    console.log('Detected audio encoding:', encoding);
+    console.log('Sample rate:', sampleRateHertz);
+
     // Configure the speech recognition request
     const request_config = {
       audio: {
         content: audioBuffer.toString('base64'),
       },
       config: {
-        encoding: 'WEBM_OPUS' as const, // Common format for web recordings
-        sampleRateHertz: 48000, // Standard for web audio
+        encoding,
+        sampleRateHertz,
         languageCode: language,
         enableAutomaticPunctuation: true,
-        model: 'latest_long', // Better for longer audio
+        model: 'latest_short', // Better for shorter audio clips
         useEnhanced: true, // Use enhanced model if available
       },
     };
@@ -81,12 +107,31 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Speech-to-text error:', error);
     
+    // More detailed error reporting
+    let errorMessage = 'Speech-to-text processing failed';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      console.error('Error stack:', error.stack);
+    }
+    
     return NextResponse.json(
       { 
-        error: error instanceof Error ? error.message : 'Speech-to-text processing failed',
-        success: false 
+        error: errorMessage,
+        success: false,
+        timestamp: new Date().toISOString()
       },
       { status: 500 }
     );
   }
+}
+
+// Add a simple GET endpoint for health checking
+export async function GET() {
+  return NextResponse.json({
+    status: 'ok',
+    service: 'speech-to-text',
+    timestamp: new Date().toISOString(),
+    hasCredentials: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
+    projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || 'not-set'
+  });
 }

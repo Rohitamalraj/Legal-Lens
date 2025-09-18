@@ -2,34 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import dynamic from "next/dynamic";
 import { SiteHeader } from "@/components/site-header"
 import { apiService } from '@/lib/api'
-
-// Lazy load components
-const Footer = dynamic(() => import("@/components/footer").then(mod => ({ default: mod.Footer })), {
-  loading: () => <div className="h-32 bg-gray-100 animate-pulse"></div>
-});
-
-const WorkflowProgress = dynamic(() => import('@/components/workflow-progress').then(mod => ({ default: mod.WorkflowProgress })), {
-  loading: () => <div className="h-16 animate-pulse bg-blue-100 rounded-lg"></div>
-});
-
-const ChatHeader = dynamic(() => import('@/components/chat-header').then(mod => ({ default: mod.ChatHeader })), {
-  loading: () => <div className="h-20 animate-pulse bg-gray-100 rounded-lg"></div>
-});
-
-const ChatArea = dynamic(() => import('@/components/chat-area').then(mod => ({ default: mod.ChatArea })), {
-  loading: () => <div className="h-96 animate-pulse bg-gray-50 rounded-lg"></div>
-});
-
-const MessageInput = dynamic(() => import('@/components/message-input').then(mod => ({ default: mod.MessageInput })), {
-  loading: () => <div className="h-20 animate-pulse bg-gray-100 rounded-lg"></div>
-});
-
-const SuggestedQuestions = dynamic(() => import('@/components/suggested-questions').then(mod => ({ default: mod.SuggestedQuestions })), {
-  loading: () => <div className="h-32 animate-pulse bg-gray-100 rounded-lg"></div>
-});
+import { Button } from '@/components/ui/button'
+import { ChevronLeft } from 'lucide-react'
+import { Footer } from "@/components/footer"
+import { WorkflowProgress } from '@/components/workflow-progress'
+import { ChatHeader } from '@/components/chat-header'
+import { ChatArea } from '@/components/chat-area'
+import { MessageInput } from '@/components/message-input'
+import { SuggestedQuestions } from '@/components/suggested-questions'
 
 interface DocumentData {
   id: string
@@ -281,7 +263,13 @@ Feel free to ask me anything about your document, or choose from the suggested q
   return (
     <main className="min-h-[100dvh] text-white">
       <SiteHeader />
-      <WorkflowProgress currentStep={4} />
+      
+      {/* Workflow Progress */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="max-w-3xl mx-auto">
+          <WorkflowProgress currentStep={4} />
+        </div>
+      </div>
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">

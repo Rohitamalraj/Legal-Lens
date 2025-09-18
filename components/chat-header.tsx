@@ -34,15 +34,6 @@ export function ChatHeader({ document, onClearChat, messageCount = 0 }: ChatHead
     <div className="liquid-glass border-b border-white/10 bg-white/5 backdrop-blur-xl p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleBackToSummary}
-            className="lg:hidden text-white hover:bg-white/10"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          
           <div className="flex items-center space-x-2">
             <MessageCircle className="w-5 h-5 text-purple-400" />
             <div>
@@ -55,7 +46,7 @@ export function ChatHeader({ document, onClearChat, messageCount = 0 }: ChatHead
         </div>
 
         <div className="flex items-center space-x-2">
-          <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-400">
+          <div className="hidden lg:flex items-center space-x-2 text-sm text-gray-400">
             <MessageSquare className="w-4 h-4" />
             <span>{messageCount} messages</span>
           </div>
@@ -63,10 +54,20 @@ export function ChatHeader({ document, onClearChat, messageCount = 0 }: ChatHead
           <Button
             variant="outline"
             size="sm"
+            onClick={handleBackToSummary}
+            className="hidden sm:flex bg-white/5 border-white/20 text-white hover:bg-white/10"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Back
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onClearChat}
             className="hidden sm:flex bg-white/5 border-white/20 text-white hover:bg-white/10"
           >
-            <Trash2 className="w-4 h-4 mr-2" />
+            <Trash2 className="w-4 h-4 mr-1" />
             Clear Chat
           </Button>
           
@@ -76,8 +77,9 @@ export function ChatHeader({ document, onClearChat, messageCount = 0 }: ChatHead
             onClick={handleNewDocument}
             className="bg-white/5 border-white/20 text-white hover:bg-white/10"
           >
-            <Upload className="w-4 h-4 mr-2" />
-            New Document
+            <Upload className="w-4 h-4 mr-1" />
+            <span className="hidden sm:inline">New Document</span>
+            <span className="sm:hidden">New</span>
           </Button>
         </div>
       </div>
@@ -92,15 +94,6 @@ export function ChatHeader({ document, onClearChat, messageCount = 0 }: ChatHead
         >
           <Trash2 className="w-4 h-4 mr-2" />
           Clear Chat
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleBackToSummary}
-          className="flex-1 text-white hover:bg-white/10"
-        >
-          <FileText className="w-4 h-4 mr-2" />
-          Back to Summary
         </Button>
       </div>
     </div>

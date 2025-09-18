@@ -1,13 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
-
-// Dynamically import the Particles component to avoid SSR issues
-const WebGLParticleSystem = dynamic(() => import('./Particles'), {
-  ssr: false,
-  loading: () => <div className="absolute inset-0 opacity-0" />
-});
+import WebGLParticleSystem from './Particles';
 
 interface ParticlesWrapperProps {
   particleCount?: number;

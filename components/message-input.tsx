@@ -32,7 +32,9 @@ export function MessageInput({ onSendMessage, isLoading = false, disabled = fals
   }
 
   const handleVoiceMessage = (transcript: string, audioBlob?: Blob) => {
+    console.log('📝 Message input received transcript:', transcript);
     if (transcript.trim()) {
+      console.log('📝 Setting message to:', transcript.trim());
       setMessage(transcript.trim())
       // Don't auto-send - let user review and send manually
     }

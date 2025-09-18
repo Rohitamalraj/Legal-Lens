@@ -70,6 +70,7 @@ export function VoiceMessageButton({
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const lastSentTranscriptRef = useRef<string>('');
 
   const { toast } = useToast();
 
@@ -109,7 +110,9 @@ export function VoiceMessageButton({
 
   const startRecording = async () => {
     try {
+      console.log('🎤 Starting voice recording...');
       const { hasMediaRecorder, hasSpeechRecognition } = checkBrowserSupport();
+      console.log('🎤 Browser support - MediaRecorder:', hasMediaRecorder, 'SpeechRecognition:', hasSpeechRecognition);
       
       setError(null);
       setIsRecording(true);
@@ -174,25 +177,46 @@ export function VoiceMessageButton({
             }
           }
 
-          setTranscript(finalTranscript + interimTranscript);
+          const combinedTranscript = finalTranscript + interimTranscript;
+          console.log('🎤 Speech recognition result:', combinedTranscript);
+          setTranscript(combinedTranscript);
         };
 
         recognition.onerror = (event: any) => {
           console.error('Speech recognition error:', event.error);
           if (event.error === 'not-allowed') {
             setError('Microphone access denied');
+            toast({
+              title: "Microphone Access Denied",
+              description: "Please allow microphone access to use voice input",
+              variant: "destructive"
+            });
           } else if (event.error === 'network') {
-            setError('Network error during speech recognition');
+            console.log('Browser speech recognition network error, will try Google Cloud API fallback');
+            // Don't set error here, let it fall back to Google Cloud API
+          } else if (event.error === 'no-speech') {
+            setError('No speech detected');
+            toast({
+              title: "No Speech Detected",
+              description: "Please speak clearly into your microphone",
+              variant: "destructive"
+            });
+          } else {
+            console.log(`Browser speech recognition error: ${event.error}, will try Google Cloud API fallback`);
+            // Don't set error for other cases, let it fall back to Google Cloud API
           }
         };
 
         recognition.onend = () => {
           if (isRecording) {
-            // Restart recognition if still recording
+            // Restart recognition if still recording, but only if no error occurred
             try {
-              recognition.start();
+              if (!error) {
+                recognition.start();
+              }
             } catch (err) {
               console.error('Failed to restart recognition:', err);
+              // Don't restart if there's an error
             }
           }
         };
@@ -207,9 +231,16 @@ export function VoiceMessageButton({
         title: "Recording started",
         description: hasSpeechRecognition 
           ? "Speak clearly into your microphone" 
-          : "Recording audio (speech recognition not available)",
+          : "Recording audio only - speech recognition unavailable",
         variant: "default"
       });
+
+      // Test immediate speech recognition
+      if (hasSpeechRecognition) {
+        setTimeout(() => {
+          console.log('🎤 Testing speech recognition after 2 seconds...');
+        }, 2000);
+      }
 
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -251,9 +282,16 @@ export function VoiceMessageButton({
     setTimeout(async () => {
       if (!transcript.trim() && audioBlob) {
         try {
+          console.log('No browser transcript available, trying Google Cloud API...');
           await processWithGoogleCloudAPI();
         } catch (error) {
           console.error('Google Cloud API processing failed:', error);
+          setError('Speech recognition failed');
+          toast({
+            title: "Voice Processing Failed",
+            description: "Could not transcribe your speech. Please try typing instead.",
+            variant: "destructive"
+          });
         }
       }
       
@@ -287,6 +325,10 @@ export function VoiceMessageButton({
         body: formData,
       });
       
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const result = await response.json();
       console.log('Speech-to-text result:', result);
       
@@ -307,11 +349,13 @@ export function VoiceMessageButton({
       }
     } catch (error) {
       console.error('Google Cloud Speech API error:', error);
-      setError('Failed to process speech');
+      
+      // Final fallback - let user know they can type instead
+      setError('Network error - please type your message');
       
       toast({
-        title: "Speech processing failed",
-        description: "Could not transcribe audio. Please try again.",
+        title: "Voice recognition unavailable",
+        description: "Network error. Please type your message instead.",
         variant: "destructive"
       });
     }
@@ -331,6 +375,7 @@ export function VoiceMessageButton({
   };
 
   const clearRecording = () => {
+    console.log('🎤 Clearing recording state');
     setTranscript('');
     setAudioBlob(null);
     if (audioUrl) {
@@ -338,6 +383,7 @@ export function VoiceMessageButton({
       setAudioUrl(null);
     }
     setError(null);
+    lastSentTranscriptRef.current = '';
   };
 
   const playAudio = () => {
@@ -414,23 +460,19 @@ export function VoiceMessageButton({
     : isRecording 
       ? 'Click to stop recording'
       : transcript
-        ? 'Voice message ready'
+        ? 'Click to record again or type in textbox'
         : 'Click to start voice recording';
 
   // Auto-send transcript to parent immediately when available
   useEffect(() => {
-    if (transcript && !isRecording && !isProcessing && onVoiceMessage) {
+    if (transcript && !isRecording && !isProcessing && onVoiceMessage && transcript !== lastSentTranscriptRef.current) {
+      console.log('🎤 Sending transcript to parent:', transcript);
       onVoiceMessage(transcript, audioBlob || undefined);
-      // Clear the transcript after sending to parent
-      setTranscript('');
-      setAudioBlob(null);
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
-        setAudioUrl(null);
-      }
-      setError(null);
+      lastSentTranscriptRef.current = transcript;
+      // Don't clear the transcript immediately - let parent handle it
+      // This allows the button to show "Ready" state until user acts
     }
-  }, [transcript, isRecording, isProcessing, onVoiceMessage, audioBlob, audioUrl]);
+  }, [transcript, isRecording, isProcessing, onVoiceMessage]);
 
   // Show voice message preview if we have transcript
   // REMOVED - transcript is now sent directly to main text box
@@ -442,7 +484,7 @@ export function VoiceMessageButton({
     <Button
       variant={variant}
       size={size}
-      onClick={isRecording ? stopRecording : startRecording}
+      onClick={isRecording ? stopRecording : (transcript ? clearRecording : startRecording)}
       disabled={disabled || isProcessing}
       className={buttonClasses}
       title={tooltipText}

@@ -2,50 +2,20 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import dynamic from "next/dynamic";
 import { SiteHeader } from "@/components/site-header"
 import { SupportedLanguageCode } from '@/lib/constants/translation'
-
-// Lazy load components with loading states
-const Footer = dynamic(() => import("@/components/footer").then(mod => ({ default: mod.Footer })), {
-  loading: () => <div className="h-32 bg-gray-100 animate-pulse"></div>
-});
-
-const WorkflowProgress = dynamic(() => import('@/components/workflow-progress').then(mod => ({ default: mod.WorkflowProgress })), {
-  loading: () => <div className="h-16 animate-pulse bg-blue-100 rounded-lg"></div>
-});
-
-const SummaryNavigationTabs = dynamic(() => import('@/components/summary-navigation-tabs').then(mod => ({ default: mod.SummaryNavigationTabs })), {
-  loading: () => <div className="h-12 animate-pulse bg-gray-100 rounded-lg"></div>
-});
-
-const DocumentSummaryCard = dynamic(() => import('@/components/document-summary-card').then(mod => ({ default: mod.DocumentSummaryCard })), {
-  loading: () => <div className="h-64 animate-pulse bg-white rounded-lg shadow"></div>
-});
-
-const SimplifiedClausesSection = dynamic(() => import('@/components/simplified-clauses-section').then(mod => ({ default: mod.SimplifiedClausesSection })), {
-  loading: () => <div className="h-96 animate-pulse bg-white rounded-lg shadow"></div>
-});
-
-const RiskAnalysisSection = dynamic(() => import('@/components/risk-analysis-section').then(mod => ({ default: mod.RiskAnalysisSection })), {
-  loading: () => <div className="h-96 animate-pulse bg-white rounded-lg shadow"></div>
-});
-
-const TranslationButton = dynamic(() => import('@/components/translation-button').then(mod => ({ default: mod.TranslationButton })), {
-  loading: () => <div className="h-10 w-24 animate-pulse bg-blue-100 rounded"></div>
-});
-
-const TranslationStatus = dynamic(() => import('@/components/translation-button').then(mod => ({ default: mod.TranslationStatus })), {
-  loading: () => <div className="h-8 w-32 animate-pulse bg-gray-100 rounded"></div>
-});
-
-const TTSButton = dynamic(() => import('@/components/tts-button').then(mod => ({ default: mod.TTSButton })), {
-  loading: () => <div className="h-10 w-24 animate-pulse bg-green-100 rounded"></div>
-});
-
-const TTSControls = dynamic(() => import('@/components/tts-button').then(mod => ({ default: mod.TTSControls })), {
-  loading: () => <div className="h-12 w-40 animate-pulse bg-green-100 rounded"></div>
-});
+import { Button } from '@/components/ui/button'
+import { ChevronLeft } from 'lucide-react'
+import { Footer } from "@/components/footer"
+import { WorkflowProgress } from '@/components/workflow-progress'
+import { SummaryNavigationTabs } from '@/components/summary-navigation-tabs'
+import { DocumentSummaryCard } from '@/components/document-summary-card'
+import { SimplifiedClausesSection } from '@/components/simplified-clauses-section'
+import { RiskAnalysisSection } from '@/components/risk-analysis-section'
+import { TranslationButton } from '@/components/translation-button'
+import { TranslationStatus } from '@/components/translation-button'
+import { TTSButton } from '@/components/tts-button'
+import { TTSControls } from '@/components/tts-button'
 
 // Define interfaces locally to avoid server-side imports
 interface ClauseData {
@@ -630,7 +600,7 @@ export default function DocumentSummaryPage() {
             <WorkflowProgress currentStep={3} />
 
             {/* Translation and Audio Controls */}
-            <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-6">
+            <div className="border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-xl p-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex flex-wrap items-center gap-4">
                   {/* Translation Button */}
@@ -653,7 +623,7 @@ export default function DocumentSummaryPage() {
             </div>
 
             {/* Document Analysis Card */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-8">
+            <div className="border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8">
               {/* Navigation Tabs */}
               <SummaryNavigationTabs 
                 activeTab={activeTab} 
@@ -667,22 +637,31 @@ export default function DocumentSummaryPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              {/* Back Button */}
+              <button
+                onClick={() => router.push('/document-preview')}
+                className="px-4 py-2 bg-transparent border border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg font-medium transition-colors flex items-center justify-center space-x-1 text-sm"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>Back to Preview</span>
+              </button>
+              
               <button
                 onClick={() => router.push('/q-a-chat-interface')}
-                className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 text-sm"
               >
                 <span>💬 Ask Questions About Document</span>
               </button>
               <button
                 onClick={handleDownloadReport}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 text-sm"
               >
                 <span>📄 Download Full Report</span>
               </button>
               <button
                 onClick={handleRestartAnalysis}
-                className="px-6 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors"
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors text-sm"
               >
                 🔄 Analyze New Document
               </button>

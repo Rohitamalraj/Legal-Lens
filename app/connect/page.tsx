@@ -1,19 +1,11 @@
 "use client"
 
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 import { SiteHeader } from "@/components/site-header";
 import { Users, Shield, Clock, MessageSquare, Video, Phone, Star, CheckCircle } from "lucide-react";
 import Link from "next/link";
-
-// Lazy load components
-const Footer = dynamic(() => import("@/components/footer").then(mod => ({ default: mod.Footer })), {
-  loading: () => <div className="h-32 bg-gray-100 animate-pulse"></div>
-});
-
-const Button = dynamic(() => import("@/components/ui/button").then(mod => ({ default: mod.Button })), {
-  loading: () => <div className="h-10 w-24 animate-pulse bg-blue-100 rounded"></div>
-});
+import { Footer } from "@/components/footer"
+import { Button } from "@/components/ui/button"
 
 export default function ConnectPage() {
   const lawyers = [
