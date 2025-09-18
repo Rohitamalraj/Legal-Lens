@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LegalDocumentService } from '@/lib/services/legal-document-service';
 
-// Initialize the service (in production, use dependency injection or singleton pattern)
-const legalDocumentService = new LegalDocumentService();
+// Lazy initialize the service
+let legalDocumentService: LegalDocumentService | null = null;
+
+function getLegalDocumentService(): LegalDocumentService {
+  if (!legalDocumentService) {
+    legalDocumentService = new LegalDocumentService();
+  }
+  return legalDocumentService;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     // Process the document
     console.log('Calling legalDocumentService.processLegalDocument...');
-    const result = await legalDocumentService.processLegalDocument(
+    const result = await getLegalDocumentService().processLegalDocument(
       buffer,
       file.name,
       file.type
@@ -89,7 +96,7 @@ export async function GET(request: NextRequest) {
 
     if (documentId) {
       // Get specific document
-      const document = legalDocumentService.getProcessedDocument(documentId);
+      const document = getLegalDocumentService().getProcessedDocument(documentId);
       
       if (!document) {
         return NextResponse.json(
@@ -112,9 +119,9 @@ export async function GET(request: NextRequest) {
       });
     } else {
       // Get all documents summary
-      const documents = legalDocumentService.getProcessedDocuments();
+      const documents = getLegalDocumentService().getProcessedDocuments();
       const summaries = documents.map(doc => 
-        legalDocumentService.getDocumentSummary(doc.id)
+        getLegalDocumentService().getDocumentSummary(doc.id)
       );
 
       return NextResponse.json({

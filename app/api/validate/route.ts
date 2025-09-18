@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LegalDocumentService } from '@/lib/services/legal-document-service';
 
-// Initialize the service
-const legalDocumentService = new LegalDocumentService();
+// Lazy initialize the service
+let legalDocumentService: LegalDocumentService | null = null;
+
+function getLegalDocumentService(): LegalDocumentService {
+  if (!legalDocumentService) {
+    legalDocumentService = new LegalDocumentService();
+  }
+  return legalDocumentService;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +33,7 @@ export async function POST(request: NextRequest) {
     console.log(`Validating file: ${file.name} (${file.type})`);
 
     // Validate the document
-    const validation = await legalDocumentService.validateDocument(
+    const validation = await getLegalDocumentService().validateDocument(
       buffer,
       file.name,
       file.type

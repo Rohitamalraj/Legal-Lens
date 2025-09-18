@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LegalDocumentService } from '@/lib/services/legal-document-service';
 
-// Initialize the service
-const legalDocumentService = new LegalDocumentService();
+// Lazy initialize the service
+let legalDocumentService: LegalDocumentService | null = null;
+
+function getLegalDocumentService(): LegalDocumentService {
+  if (!legalDocumentService) {
+    legalDocumentService = new LegalDocumentService();
+  }
+  return legalDocumentService;
+}
 
 export async function POST(request: NextRequest) {
   const timestamp = new Date().toISOString();
@@ -44,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Process the chat query
     console.log('Calling legalDocumentService.handleChatQuery...');
-    const response = await legalDocumentService.handleChatQuery(documentId, query.trim());
+    const response = await getLegalDocumentService().handleChatQuery(documentId, query.trim());
 
     console.log('Chat query processed successfully');
     console.log('Response received:', response);
@@ -85,7 +92,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if document exists and return basic info
-    const document = legalDocumentService.getProcessedDocument(documentId);
+    const document = getLegalDocumentService().getProcessedDocument(documentId);
     
     if (!document) {
       return NextResponse.json(

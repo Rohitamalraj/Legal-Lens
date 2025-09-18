@@ -1,5 +1,5 @@
 import { DocumentAIService, DocumentProcessingResult } from './document-ai';
-import { VertexAIService, LegalAnalysisResult, ChatResponse } from './vertex-ai';
+import { vertexAIService, VertexAIService, LegalAnalysisResult, ChatResponse } from './vertex-ai';
 import DocumentStore from './document-store';
 
 export interface ProcessedDocument {
@@ -33,7 +33,7 @@ export class LegalDocumentService {
   constructor() {
     console.log('Creating LegalDocumentService instance');
     this.documentAI = new DocumentAIService();
-    this.vertexAI = new VertexAIService();
+    this.vertexAI = vertexAIService.getInstance();
     this.documentStore = DocumentStore.getInstance();
     console.log('LegalDocumentService initialized with shared document store');
   }

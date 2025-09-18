@@ -863,5 +863,27 @@ IMPORTANT: Base your analysis on the ACTUAL document content provided. Do not us
   }
 }
 
-// Export singleton instance
-export const vertexAIService = new VertexAIService();
+// Export singleton instance with lazy loading
+let _vertexAIService: VertexAIService | null = null;
+
+export const vertexAIService = {
+  getInstance(): VertexAIService {
+    if (!_vertexAIService) {
+      _vertexAIService = new VertexAIService();
+    }
+    return _vertexAIService;
+  },
+  
+  // Proxy methods to maintain backward compatibility
+  async analyzeLegalDocument(documentText: string, documentType: string): Promise<LegalAnalysisResult> {
+    return this.getInstance().analyzeLegalDocument(documentText, documentType);
+  },
+  
+  async chatQuery(query: string, documentText: string, context?: string): Promise<ChatResponse> {
+    return this.getInstance().chatQuery(query, documentText, context);
+  },
+  
+  async analyzeClausesAndRisks(documentText: string): Promise<DetailedAnalysisResult> {
+    return this.getInstance().analyzeClausesAndRisks(documentText);
+  }
+};

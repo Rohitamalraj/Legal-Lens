@@ -191,6 +191,53 @@ class TranslationService {
   }
 }
 
-// Export a singleton instance
-export const translationService = new TranslationService();
+// Export singleton instance with lazy loading
+let _translationService: TranslationService | null = null;
+
+export const translationService = {
+  getInstance(): TranslationService {
+    if (!_translationService) {
+      _translationService = new TranslationService();
+    }
+    return _translationService;
+  },
+  
+  // Proxy methods to maintain backward compatibility
+  async translateText(
+    text: string,
+    targetLanguage: SupportedLanguageCode,
+    sourceLanguage?: string
+  ): Promise<TranslationResponse> {
+    return this.getInstance().translateText(text, targetLanguage, sourceLanguage);
+  },
+  
+  async translateTexts(
+    texts: string[],
+    targetLanguage: SupportedLanguageCode,
+    sourceLanguage?: string
+  ): Promise<TranslationResponse[]> {
+    return this.getInstance().translateTexts(texts, targetLanguage, sourceLanguage);
+  },
+  
+  async translateSummary(
+    summary: any,
+    targetLanguage: SupportedLanguageCode,
+    sourceLanguage?: string
+  ): Promise<any> {
+    return this.getInstance().translateSummary(summary, targetLanguage, sourceLanguage);
+  },
+  
+  async detectLanguage(text: string): Promise<{ language: string; confidence: number }> {
+    return this.getInstance().detectLanguage(text);
+  },
+  
+  getSupportedLanguages(): Record<string, string> {
+    return this.getInstance().getSupportedLanguages();
+  },
+  
+  isLanguageSupported(languageCode: string): languageCode is SupportedLanguageCode {
+    return this.getInstance().isLanguageSupported(languageCode);
+  }
+};
+
 export default translationService;
