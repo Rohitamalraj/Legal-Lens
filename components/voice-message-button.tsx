@@ -365,7 +365,7 @@ export function VoiceMessageButton({
       return (
         <>
           <Loader2 className="h-4 w-4 animate-spin text-white" />
-          {showLabel && <span className="text-white text-sm">Processing...</span>}
+          {showLabel && <span className="text-white text-sm hidden sm:inline">Processing...</span>}
         </>
       );
     }
@@ -375,7 +375,7 @@ export function VoiceMessageButton({
         <>
           <Square className="h-4 w-4 text-red-400" />
           {showLabel && (
-            <span className="text-red-300 text-sm">
+            <span className="text-red-300 text-sm hidden sm:inline">
               {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
             </span>
           )}
@@ -387,7 +387,7 @@ export function VoiceMessageButton({
       return (
         <>
           <MicOff className="h-4 w-4 text-red-400" />
-          {showLabel && <span className="text-red-300 text-sm">Error</span>}
+          {showLabel && <span className="text-red-300 text-sm hidden sm:inline">Error</span>}
         </>
       );
     }
@@ -396,7 +396,7 @@ export function VoiceMessageButton({
       return (
         <>
           <Mic className="h-4 w-4 text-green-400" />
-          {showLabel && <span className="text-green-300 text-sm">Ready</span>}
+          {showLabel && <span className="text-green-300 text-sm hidden sm:inline">Ready</span>}
         </>
       );
     }
@@ -404,7 +404,7 @@ export function VoiceMessageButton({
     return (
       <>
         <Mic className="h-4 w-4 text-white/80" />
-        {showLabel && <span className="text-white text-sm">Voice</span>}
+        {showLabel && <span className="text-white text-sm hidden sm:inline">Voice</span>}
       </>
     );
   };

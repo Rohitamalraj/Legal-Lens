@@ -117,7 +117,7 @@ export function DocumentPreview({ file, extractedText, onContinue, onRemove }: D
             onClick={onContinue}
             className="flex-1 bg-purple-600 hover:bg-purple-500"
           >
-            Continue to Analysis
+            Continue to Preview
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
           <Button

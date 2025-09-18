@@ -20,7 +20,7 @@ const SupportedFormats = dynamic(() => import('@/components/supported-formats').
   loading: () => <div className="h-32 animate-pulse bg-gray-100 rounded-lg"></div>
 });
 
-const DocumentPreview = dynamic(() => import('@/components/document-preview').then(mod => ({ default: mod.DocumentPreview })), {
+const DocumentUploadSuccess = dynamic(() => import('@/components/document-upload-success').then(mod => ({ default: mod.DocumentUploadSuccess })), {
   loading: () => <div className="h-40 animate-pulse bg-gray-100 rounded-lg"></div>
 });
 
@@ -194,7 +194,7 @@ Sample extracted content would continue here with the full text of your document
   // Handle continue to analysis
   const handleContinue = () => {
     if (uploadedFile) {
-      // Store the uploaded file data in sessionStorage for the summary page
+      // Store the uploaded file data in sessionStorage for the preview page
       sessionStorage.setItem('uploadedDocument', JSON.stringify({
         id: uploadedFile.documentData.id,
         fileName: uploadedFile.file.name,
@@ -207,8 +207,8 @@ Sample extracted content would continue here with the full text of your document
         uploadTime: uploadedFile.documentData.uploadTime
       }))
       
-      // Navigate to document summary page
-      router.push('/document-summary')
+      // Navigate to document preview page (step 2)
+      router.push('/document-preview')
     }
   }
 
@@ -261,13 +261,12 @@ Sample extracted content would continue here with the full text of your document
               </>
             )}
 
-            {/* Document Preview */}
+            {/* Document Upload Success */}
             {uploadedFile && (
-              <DocumentPreview
+              <DocumentUploadSuccess
                 file={uploadedFile.file}
-                extractedText={uploadedFile.documentData.analysis.summary || 'Document analysis completed successfully.'}
                 onContinue={handleContinue}
-                onRemove={handleRemoveFile}
+                onUploadAnother={handleRemoveFile}
               />
             )}
 
