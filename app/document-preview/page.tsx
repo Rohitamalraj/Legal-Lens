@@ -134,19 +134,19 @@ export default function DocumentPreviewPage() {
                     <h2 className="text-xl font-semibold text-white truncate">
                       {documentData.fileName}
                     </h2>
-                    <div className="flex items-center space-x-4 text-sm text-gray-400 mt-1">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400 mt-1">
                       <span>{formatFileSize(documentData.fileSize)}</span>
-                      <span>•</span>
-                      <span>{documentData.documentType}</span>
-                      <span>•</span>
-                      <span>
+                      <span className="hidden sm:inline">•</span>
+                      <span className="truncate">{documentData.documentType}</span>
+                      <span className="hidden sm:inline">•</span>
+                      <span className="text-xs sm:text-sm">
                         {documentData.isLegalDocument ? 'Legal Document' : 'General Document'}
                       </span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-400">Confidence</div>
-                    <div className="text-lg font-semibold text-green-400">
+                  <div className="text-right hidden sm:block">
+                    <div className="text-xs sm:text-sm text-gray-400">AI Confidence</div>
+                    <div className="text-sm sm:text-lg font-semibold text-green-400">
                       {Math.round(documentData.confidence * 100)}%
                     </div>
                   </div>

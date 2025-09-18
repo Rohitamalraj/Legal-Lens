@@ -429,9 +429,7 @@ export function VoiceMessageButton({
         
         toast({
           title: "Voice message ready!",
-          description: result.confidence && result.confidence < 0.8 
-            ? `Transcribed with ${Math.round(result.confidence * 100)}% confidence`
-            : "Speech successfully converted to text",
+          description: "Speech successfully converted to text",
           variant: "default"
         });
       } else {

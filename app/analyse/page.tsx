@@ -520,10 +520,8 @@ export default function AnalysePage() {
       
       recognition.onresult = async (event: any) => {
         const transcript = event.results[0][0].transcript;
-        const confidence = event.results[0][0].confidence;
         
         console.log('✅ Speech transcribed:', transcript);
-        console.log('Confidence:', confidence);
         
         setIsRecording(false);
         setIsProcessingSpeech(true);
