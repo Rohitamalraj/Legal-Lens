@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
         documentType: result.documentProcessing.documentType,
         isLegalDocument: result.documentProcessing.isLegalDocument,
         confidence: result.documentProcessing.confidence,
+        extractedText: result.documentProcessing.text, // Add the extracted text
         analysis: {
           summary: result.legalAnalysis.summary,
           riskScore: result.legalAnalysis.riskScore,

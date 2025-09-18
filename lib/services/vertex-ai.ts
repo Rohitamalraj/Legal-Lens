@@ -33,6 +33,30 @@ export interface ChatResponse {
   sources?: string[];
 }
 
+export interface ClauseData {
+  id: string;
+  type: string;
+  title: string;
+  originalText: string;
+  simplifiedPoints: string[];
+  keyTakeaway: string;
+}
+
+export interface RiskData {
+  id: string;
+  level: 'high' | 'medium' | 'low';
+  title: string;
+  section: string;
+  description: string;
+  recommendation: string;
+  impact: string;
+}
+
+export interface DetailedAnalysisResult {
+  clauses: ClauseData[];
+  risks: RiskData[];
+}
+
 /**
  * Vertex AI Service
  * Handles AI-powered legal document analysis using Gemini
@@ -602,4 +626,242 @@ Answer:`;
       ]
     };
   }
+
+  /**
+   * Analyze document for detailed clauses and risk information
+   */
+  async analyzeClausesAndRisks(documentText: string): Promise<DetailedAnalysisResult> {
+    try {
+      console.log('=== DETAILED ANALYSIS START ===');
+      console.log('Document text length:', documentText.length);
+      console.log('Project ID:', this.projectId);
+      console.log('Location:', this.location);
+      console.log('Model:', this.model);
+
+      const prompt = this.buildDetailedAnalysisPrompt(documentText);
+      console.log('Generated prompt length:', prompt.length);
+      console.log('Prompt preview:', prompt.substring(0, 500) + '...');
+      
+      const generativeModel = this.vertexAI.getGenerativeModel({
+        model: this.model,
+        generationConfig: {
+          maxOutputTokens: 8192,
+          temperature: 0.2,
+          topP: 0.8,
+        },
+      });
+
+      console.log('Analyzing document clauses and risks with Vertex AI...');
+      const result = await generativeModel.generateContent(prompt);
+      
+      console.log('Raw Vertex AI response received');
+      console.log('Response structure:', {
+        hasResponse: !!result.response,
+        hasCandidates: !!result.response?.candidates,
+        candidatesLength: result.response?.candidates?.length || 0
+      });
+
+      const response = result.response;
+      
+      if (!response || !response.candidates || response.candidates.length === 0) {
+        console.error('No detailed analysis generated from Vertex AI');
+        throw new Error('No detailed analysis generated from Vertex AI - empty response');
+      }
+
+      const analysisText = response.candidates[0].content.parts[0].text || '';
+      console.log('Analysis text received, length:', analysisText.length);
+      console.log('Analysis text preview:', analysisText.substring(0, 300) + '...');
+
+      const parsedResult = this.parseDetailedAnalysisResult(analysisText);
+      
+      console.log('Parsed result:', {
+        clausesCount: parsedResult.clauses.length,
+        risksCount: parsedResult.risks.length,
+        firstClause: parsedResult.clauses[0]?.title || 'None',
+        firstRisk: parsedResult.risks[0]?.title || 'None'
+      });
+      console.log('=== DETAILED ANALYSIS SUCCESS ===');
+
+      return parsedResult;
+
+    } catch (error) {
+      console.error('=== DETAILED ANALYSIS ERROR ===');
+      console.error('Vertex AI detailed analysis error:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
+      // Check if it's a credential or API issue
+      if (error instanceof Error) {
+        if (error.message.includes('credentials') || error.message.includes('authentication')) {
+          console.error('CREDENTIAL ERROR: Please check your Google Cloud credentials');
+        } else if (error.message.includes('quota') || error.message.includes('limit')) {
+          console.error('QUOTA ERROR: Vertex AI quota exceeded');
+        } else if (error.message.includes('permission') || error.message.includes('access')) {
+          console.error('PERMISSION ERROR: Check Vertex AI API permissions');
+        }
+      }
+      
+      // Re-throw the error instead of falling back to mock data
+      // This will allow the frontend to handle the error appropriately
+      throw new Error(`Vertex AI analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Build detailed analysis prompt for clauses and risks
+   */
+  private buildDetailedAnalysisPrompt(documentText: string): string {
+    return `You are an expert legal analyst. Carefully read and analyze the following legal document to extract specific clauses and identify real risks.
+
+DOCUMENT TO ANALYZE:
+${documentText}
+
+CRITICAL INSTRUCTIONS:
+- Analyze the ACTUAL document text provided above
+- Extract REAL clauses and risks that exist in this specific document
+- Do NOT use generic/template examples
+- Return ONLY valid JSON with no additional text, explanations, or markdown
+- Use double quotes for all strings
+- Do not include trailing commas
+- Escape any quotes within string values
+- Ensure all brackets and braces are properly closed
+
+ANALYSIS REQUIREMENTS:
+1. CLAUSES: Find 4-8 actual important clauses from the document
+   - Extract the real text from the document (not generic examples)
+   - Focus on: payment terms, termination, liability, IP rights, confidentiality, dispute resolution, obligations
+   - Use the actual section numbers/references from the document
+
+2. RISKS: Identify 4-8 real risks based on the specific document content
+   - Analyze what could actually go wrong based on the document terms
+   - Consider: unfair terms, unclear language, one-sided obligations, missing protections
+   - Provide specific recommendations for this document
+
+Provide your analysis in this EXACT JSON structure:
+{
+  "clauses": [
+    {
+      "id": "clause_001",
+      "type": "payment|termination|liability|intellectual_property|confidentiality|dispute_resolution|obligations|warranties|indemnification",
+      "title": "Descriptive title based on actual clause content",
+      "originalText": "EXACT text extracted from the provided document",
+      "simplifiedPoints": [
+        "Plain English explanation of what this clause means",
+        "What this requires from each party",
+        "Any important conditions or exceptions"
+      ],
+      "keyTakeaway": "Main practical implication for the reader"
+    }
+  ],
+  "risks": [
+    {
+      "id": "risk_001",
+      "level": "high|medium|low",
+      "title": "Specific risk based on document content",
+      "section": "Actual section reference from document or general area",
+      "description": "Detailed explanation of the specific risk in this document",
+      "recommendation": "Specific action to mitigate this risk",
+      "impact": "What could realistically happen if this risk materializes"
+    }
+  ]
 }
+
+IMPORTANT: Base your analysis on the ACTUAL document content provided. Do not use generic legal language - extract and analyze the real terms in this specific document.`;
+  }
+
+  /**
+   * Parse detailed analysis result for clauses and risks
+   */
+  private parseDetailedAnalysisResult(analysisText: string): DetailedAnalysisResult {
+    try {
+      console.log('=== PARSING DETAILED ANALYSIS RESULT ===');
+      console.log('Raw analysis text length:', analysisText.length);
+      
+      // Clean up the response to extract JSON
+      let jsonText = analysisText.trim();
+      
+      // Remove markdown code blocks if present
+      jsonText = jsonText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '');
+      jsonText = jsonText.replace(/^```\s*/i, '').replace(/```\s*$/i, '');
+      
+      // Remove any leading/trailing whitespace again
+      jsonText = jsonText.trim();
+      
+      const parsed = JSON.parse(jsonText);
+      
+      // Validate structure
+      if (!parsed.clauses || !Array.isArray(parsed.clauses)) {
+        throw new Error('Invalid clauses structure');
+      }
+      
+      if (!parsed.risks || !Array.isArray(parsed.risks)) {
+        throw new Error('Invalid risks structure');
+      }
+
+      return {
+        clauses: parsed.clauses,
+        risks: parsed.risks
+      };
+
+    } catch (error) {
+      console.error('Error parsing detailed analysis result:', error);
+      throw new Error('Failed to parse analysis result');
+    }
+  }
+
+  /**
+   * Generate mock clauses and risks data
+   */
+  private generateMockClausesAndRisks(): DetailedAnalysisResult {
+    return {
+      clauses: [
+        {
+          id: "clause_001",
+          type: "payment",
+          title: "Payment Terms",
+          originalText: "Payment shall be made within thirty (30) days of invoice receipt. Late payments are subject to interest charges.",
+          simplifiedPoints: [
+            "You must pay within 30 days of receiving an invoice",
+            "Late payments will be charged interest"
+          ],
+          keyTakeaway: "Standard payment terms - ensure your accounting team can meet the deadline."
+        },
+        {
+          id: "clause_002",
+          type: "termination",
+          title: "Termination Rights",
+          originalText: "Either party may terminate this agreement with sixty (60) days written notice.",
+          simplifiedPoints: [
+            "Either side can end the contract with 60 days notice",
+            "Notice must be in writing"
+          ],
+          keyTakeaway: "Fair termination terms that protect both parties."
+        }
+      ],
+      risks: [
+        {
+          id: "risk_001",
+          level: "medium",
+          title: "Limited Liability Exposure",
+          section: "Section 8.2",
+          description: "The service provider has limited their maximum liability, which could leave you exposed if their work causes issues.",
+          recommendation: "Consider requiring professional liability insurance for critical projects.",
+          impact: "Could result in unrecoverable losses if issues arise"
+        },
+        {
+          id: "risk_002",
+          level: "low",
+          title: "Standard Confidentiality",
+          section: "Section 9.1",
+          description: "Good mutual confidentiality protections are in place for both parties.",
+          recommendation: "This clause provides adequate protection for sensitive information.",
+          impact: "Positive protection for your business information"
+        }
+      ]
+    };
+  }
+}
+
+// Export singleton instance
+export const vertexAIService = new VertexAIService();

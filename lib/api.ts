@@ -5,6 +5,7 @@ export interface DocumentAnalysis {
   documentType: string;
   isLegalDocument: boolean;
   confidence: number;
+  extractedText: string; // Add extracted text field
   analysis: {
     summary: string;
     riskScore: number;
