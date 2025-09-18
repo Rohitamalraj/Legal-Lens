@@ -24,9 +24,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('Request body received:', body);
     
-    const { documentId, query } = body;
+    const { documentId, query, documentText, documentType } = body;
     console.log('Extracted documentId:', documentId);
     console.log('Extracted query:', query);
+    console.log('Has documentText fallback:', !!documentText);
 
     if (!documentId) {
       console.error('No document ID provided in request');
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     // Process the chat query
     console.log('Calling legalDocumentService.handleChatQuery...');
-    const response = await getLegalDocumentService().handleChatQuery(documentId, query.trim());
+    const response = await getLegalDocumentService().handleChatQuery(documentId, query.trim(), documentText, documentType);
 
     console.log('Chat query processed successfully');
     console.log('Response received:', response);

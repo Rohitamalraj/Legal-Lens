@@ -428,7 +428,7 @@ export default function AnalysePage() {
     setCurrentMessage('')
     
     try {
-      const response = await apiService.sendChatMessage(documentData.id, query)
+      const response = await apiService.sendChatMessage(documentData.id, query, documentData.extractedText, documentData.documentType)
       
       if (response.success && response.data) {
         const aiMessage = { 
@@ -543,7 +543,7 @@ export default function AnalysePage() {
           setIsSendingMessage(true);
           
           try {
-            const response = await apiService.sendChatMessage(documentData.id, transcript.trim());
+            const response = await apiService.sendChatMessage(documentData.id, transcript.trim(), documentData.extractedText, documentData.documentType);
             
             if (response.success && response.data) {
               const aiMessage = { role: 'assistant' as const, message: response.data.response };

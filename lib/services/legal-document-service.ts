@@ -171,19 +171,41 @@ export class LegalDocumentService {
   /**
    * Handle chat queries about processed documents
    */
-  async handleChatQuery(documentId: string, query: string): Promise<ChatResponse> {
+  async handleChatQuery(documentId: string, query: string, fallbackDocumentText?: string, fallbackDocumentType?: string): Promise<ChatResponse> {
     try {
       console.log('=== LEGAL DOCUMENT SERVICE CHAT QUERY DEBUG ===');
       console.log('Document ID requested:', documentId);
       console.log('Query received:', query);
+      console.log('Has fallback text:', !!fallbackDocumentText);
       console.log('Total processed documents in memory:', this.documentStore.size());
       console.log('Available document IDs:', Array.from(this.documentStore.keys()));
       
       const document = this.documentStore.get(documentId);
       console.log('Document found:', !!document);
       
+      // If document not found in store but we have fallback text, use it
+      if (!document && fallbackDocumentText) {
+        console.log('Document not found in store, using fallback text');
+        console.log('Fallback text length:', fallbackDocumentText.length);
+        console.log('Fallback document type:', fallbackDocumentType || 'unknown');
+        
+        const contextString = `Document Type: ${fallbackDocumentType || 'Legal Document'}`;
+        console.log('Context string for AI:', contextString);
+        console.log('Calling Vertex AI with fallback document text...');
+
+        const result = await this.vertexAI.chatQuery(
+          query,
+          fallbackDocumentText,
+          contextString
+        );
+        
+        console.log('Chat query completed successfully with fallback');
+        console.log('=== LEGAL DOCUMENT SERVICE CHAT QUERY SUCCESS (FALLBACK) ===');
+        return result;
+      }
+      
       if (!document) {
-        console.error('Document not found in memory!');
+        console.error('Document not found in memory and no fallback provided!');
         console.error('Requested ID:', documentId);
         console.error('Available IDs:', Array.from(this.documentStore.keys()));
         throw new Error('Document not found. Please upload a document first.');

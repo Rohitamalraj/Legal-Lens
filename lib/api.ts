@@ -157,7 +157,7 @@ class ApiService {
     }
   }
 
-  async sendChatMessage(documentId: string, query: string): Promise<ApiResponse<ChatResponse>> {
+  async sendChatMessage(documentId: string, query: string, documentText?: string, documentType?: string): Promise<ApiResponse<ChatResponse>> {
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -166,7 +166,9 @@ class ApiService {
         },
         body: JSON.stringify({
           documentId,
-          query
+          query,
+          documentText,
+          documentType
         }),
       });
 
