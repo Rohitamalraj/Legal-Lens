@@ -50,26 +50,20 @@ service cloud.firestore {
 }
 ```
 
-### 5. Get Firebase Configuration
-1. Go to **Project Settings** (gear icon)
-2. Scroll to **"Your apps"** section
-3. Click **"Web"** app icon (</>) to create web app
-4. Register app with name "Legal-Lens"
-5. Copy the configuration object
-
 ## Environment Variables Setup
 
 ### Local Development (.env.local)
-Create or update your `.env.local` file:
+Create or update your `.env.local` file with your Firebase configuration:
 
 ```bash
-# Firebase Configuration
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
+# Firebase Configuration - Replace with your Firebase project details
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
-NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abcdef123456
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 
 # Existing Google Cloud Configuration
 GOOGLE_CLOUD_PROJECT_ID=your_gcp_project_id
@@ -80,16 +74,17 @@ GOOGLE_APPLICATION_CREDENTIALS=path_to_service_account.json
 1. Go to your Vercel dashboard
 2. Select your Legal-Lens project
 3. Go to **Settings** > **Environment Variables**
-4. Add the Firebase environment variables:
+4. Add the Firebase environment variables from your Firebase Console:
 
 | Variable | Value |
 |----------|-------|
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | Your Firebase API key |
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `your_project_id.firebaseapp.com` |
 | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Your Firebase project ID |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | `your_project_id.appspot.com` |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | `your_project_id.firebasestorage.app` |
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Your sender ID |
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | Your app ID |
+| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | Your measurement ID |
 
 5. Redeploy your application
 
