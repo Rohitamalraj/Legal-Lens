@@ -2,11 +2,25 @@
 
 import type { Metadata } from "next";
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import { SiteHeader } from "@/components/site-header";
-import { Hero } from "@/components/hero";
-import { Workflow } from "@/components/workflow";
-import { Features } from "@/components/features";
-import { Footer } from "@/components/footer";
+
+// Lazy load components with loading states
+const Hero = dynamic(() => import("@/components/hero").then(mod => ({ default: mod.Hero })), {
+  loading: () => <div className="h-screen flex items-center justify-center">Loading...</div>
+});
+
+const Workflow = dynamic(() => import("@/components/workflow").then(mod => ({ default: mod.Workflow })), {
+  loading: () => <div className="h-64 flex items-center justify-center">Loading workflow...</div>
+});
+
+const Features = dynamic(() => import("@/components/features").then(mod => ({ default: mod.Features })), {
+  loading: () => <div className="h-64 flex items-center justify-center">Loading features...</div>
+});
+
+const Footer = dynamic(() => import("@/components/footer").then(mod => ({ default: mod.Footer })), {
+  loading: () => <div className="h-32 flex items-center justify-center">Loading footer...</div>
+});
 
 // Smooth scroll reveal animation variants
 const fadeInUp = {

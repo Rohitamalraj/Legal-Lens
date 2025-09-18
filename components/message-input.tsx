@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { VoiceMessageButton } from '@/components/voice-message-button'
 
 interface MessageInputProps {
   onSendMessage: (message: string) => void
@@ -30,6 +31,13 @@ export function MessageInput({ onSendMessage, isLoading = false, disabled = fals
     }
   }
 
+  const handleVoiceMessage = (transcript: string, audioBlob?: Blob) => {
+    if (transcript.trim()) {
+      setMessage(transcript.trim())
+      // Don't auto-send - let user review and send manually
+    }
+  }
+
   return (
     <div className="border-t border-white/10 liquid-glass bg-white/5 backdrop-blur-xl p-4">
       <form onSubmit={handleSubmit} className="flex items-end space-x-3">
@@ -50,6 +58,17 @@ export function MessageInput({ onSendMessage, isLoading = false, disabled = fals
             }}
           />
         </div>
+
+        {/* Voice Message Button */}
+        <VoiceMessageButton
+          onVoiceMessage={handleVoiceMessage}
+          disabled={disabled || isLoading}
+          size="default"
+          variant="outline"
+          language="en-US"
+          autoSend={false}
+          className="shrink-0 h-12"
+        />
         
         <Button
           type="submit"
@@ -67,7 +86,7 @@ export function MessageInput({ onSendMessage, isLoading = false, disabled = fals
         </Button>
       </form>
       <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
-        <span>Press Enter to send, Shift+Enter for new line</span>
+        <span>Press Enter to send, Shift+Enter for new line, or use voice input</span>
         <span>{message.length}/500</span>
       </div>
     </div>

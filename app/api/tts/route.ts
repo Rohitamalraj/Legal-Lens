@@ -1,15 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TextToSpeechClient } from '@google-cloud/text-to-speech'
+import { GoogleCloudConfig } from '@/lib/services/google-cloud-config'
 
-// Initialize the TTS client with ADC (Application Default Credentials)
-const client = new TextToSpeechClient()
+// Initialize the TTS client with GoogleCloudConfig
+const createClient = () => {
+  try {
+    const cloudConfig = GoogleCloudConfig.getInstance()
+    const credentials = cloudConfig.getCredentials()
+    const projectId = cloudConfig.getProjectId()
+    
+    console.log('TTS: Initializing client with project:', projectId)
+    
+    if (credentials) {
+      console.log('TTS: Using explicit credentials from environment')
+      return new TextToSpeechClient({
+        projectId: projectId,
+        credentials: credentials,
+      })
+    } else {
+      console.log('TTS: Using Application Default Credentials (ADC)')
+      return new TextToSpeechClient({
+        projectId: projectId,
+      })
+    }
+  } catch (error) {
+    console.error('TTS: Failed to initialize client:', error)
+    throw error
+  }
+}
+
+let client: TextToSpeechClient | null = null
+
+try {
+  client = createClient()
+  console.log('TTS: Client initialized successfully')
+} catch (error) {
+  console.error('TTS: Client initialization failed:', error)
+  client = null
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, language = 'en-US', voiceGender = 'NEUTRAL' } = await request.json()
+    // Re-initialize client if it failed during startup
+    if (!client) {
+      console.log('TTS: Attempting to re-initialize client...')
+      try {
+        client = createClient()
+        console.log('TTS: Client re-initialized successfully')
+      } catch (initError) {
+        console.error('TTS: Client re-initialization failed:', initError)
+        return NextResponse.json({ 
+          error: 'Text-to-speech service not available. Please check Google Cloud credentials configuration.',
+          details: initError instanceof Error ? initError.message : 'Unknown error'
+        }, { status: 500 })
+      }
+    }
+
+    const { text, languageCode = 'en-US', voiceType = 'neural' } = await request.json()
 
     if (!text) {
       return NextResponse.json({ error: 'Text is required' }, { status: 400 })
+    }
+
+    // Validate text length (Google TTS has limits)
+    if (text.length > 5000) {
+      return NextResponse.json({ 
+        error: 'Text too long. Maximum 5000 characters allowed.' 
+      }, { status: 400 })
     }
 
     // Language voice mapping for better voice selection
@@ -39,17 +96,39 @@ export async function POST(request: NextRequest) {
         'hu-HU': { name: 'hu-HU-Wavenet-A', ssmlGender: 'FEMALE' },
       }
 
-      return voiceMap[lang] || { ssmlGender: voiceGender as 'MALE' | 'FEMALE' | 'NEUTRAL' }
+      return voiceMap[lang] || { ssmlGender: 'NEUTRAL' }
     }
 
-    const voiceConfig = getVoiceConfig(language)
+    const voiceConfig = getVoiceConfig(languageCode)
+
+    // Enhanced voice selection based on voiceType parameter
+    let selectedVoice = voiceConfig
+    if (voiceType === 'neural' && !voiceConfig.name?.includes('Neural')) {
+      // Prefer Neural2 voices for better quality
+      const neuralNames: Record<string, string> = {
+        'en-US': 'en-US-Neural2-D',
+        'en-GB': 'en-GB-Neural2-A', 
+        'es-ES': 'es-ES-Neural2-C',
+        'fr-FR': 'fr-FR-Neural2-A',
+        'de-DE': 'de-DE-Neural2-A',
+        'it-IT': 'it-IT-Neural2-A',
+        'pt-BR': 'pt-BR-Neural2-A',
+        'ja-JP': 'ja-JP-Neural2-B',
+        'ko-KR': 'ko-KR-Neural2-A',
+        'hi-IN': 'hi-IN-Neural2-A',
+      }
+      
+      if (neuralNames[languageCode]) {
+        selectedVoice = { name: neuralNames[languageCode], ssmlGender: 'FEMALE' }
+      }
+    }
 
     // Construct the request with optimized settings for speed
     const request_config = {
       input: { text },
       voice: {
-        languageCode: language,
-        ...voiceConfig
+        languageCode: languageCode,
+        ...selectedVoice
       },
       audioConfig: {
         audioEncoding: 'MP3' as const,
@@ -62,8 +141,8 @@ export async function POST(request: NextRequest) {
 
     console.log('TTS Request:', {
       text: text.substring(0, 100) + '...',
-      language,
-      voice: voiceConfig
+      languageCode,
+      voice: selectedVoice
     })
 
     // Perform the text-to-speech request

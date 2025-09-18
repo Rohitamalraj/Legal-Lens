@@ -2,13 +2,34 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import dynamic from "next/dynamic";
 import { SiteHeader } from "@/components/site-header"
-import { Footer } from "@/components/footer"
-import { WorkflowProgress } from '@/components/workflow-progress'
-import { ChatHeader } from '@/components/chat-header'
-import { ChatArea } from '@/components/chat-area'
-import { MessageInput } from '@/components/message-input'
-import { SuggestedQuestions } from '@/components/suggested-questions'
+import { apiService } from '@/lib/api'
+
+// Lazy load components
+const Footer = dynamic(() => import("@/components/footer").then(mod => ({ default: mod.Footer })), {
+  loading: () => <div className="h-32 bg-gray-100 animate-pulse"></div>
+});
+
+const WorkflowProgress = dynamic(() => import('@/components/workflow-progress').then(mod => ({ default: mod.WorkflowProgress })), {
+  loading: () => <div className="h-16 animate-pulse bg-blue-100 rounded-lg"></div>
+});
+
+const ChatHeader = dynamic(() => import('@/components/chat-header').then(mod => ({ default: mod.ChatHeader })), {
+  loading: () => <div className="h-20 animate-pulse bg-gray-100 rounded-lg"></div>
+});
+
+const ChatArea = dynamic(() => import('@/components/chat-area').then(mod => ({ default: mod.ChatArea })), {
+  loading: () => <div className="h-96 animate-pulse bg-gray-50 rounded-lg"></div>
+});
+
+const MessageInput = dynamic(() => import('@/components/message-input').then(mod => ({ default: mod.MessageInput })), {
+  loading: () => <div className="h-20 animate-pulse bg-gray-100 rounded-lg"></div>
+});
+
+const SuggestedQuestions = dynamic(() => import('@/components/suggested-questions').then(mod => ({ default: mod.SuggestedQuestions })), {
+  loading: () => <div className="h-32 animate-pulse bg-gray-100 rounded-lg"></div>
+});
 
 interface DocumentData {
   id: string
@@ -107,13 +128,13 @@ These obligations are reasonable and standard for this type of agreement.`,
     if (storedData) {
       const data = JSON.parse(storedData)
       setDocumentData({
-        id: "doc_001",
+        id: data.id || "doc_001", // Use real document ID from API
         name: data.fileName,
-        uploadDate: new Date().toISOString(),
+        uploadDate: data.uploadTime || new Date().toISOString(),
         size: data.fileSize,
-        type: "Legal Document",
+        type: data.documentType || "Legal Document",
         status: "completed",
-        extractedText: data.extractedText
+        extractedText: data.analysis?.summary || ""
       })
     } else {
       // Redirect back to upload if no document data
@@ -136,7 +157,7 @@ Feel free to ask me anything about your document, or choose from the suggested q
   }, [])
 
   const handleSendMessage = async (messageText: string) => {
-    if (!messageText.trim()) return
+    if (!messageText.trim() || !documentData) return
 
     // Hide suggestions after first message
     setShowSuggestions(false)
@@ -155,36 +176,45 @@ Feel free to ask me anything about your document, or choose from the suggested q
     // Show typing indicator
     setIsTyping(true)
 
-    // Simulate AI processing delay
-    setTimeout(() => {
-      setIsTyping(false)
+    try {
+      // Send message to real chat API
+      const chatResult = await apiService.sendChatMessage(documentData.id, messageText)
       
-      // Get AI response (mock)
-      const aiResponse = mockAIResponses[messageText] || {
-        content: `I understand you're asking about: "${messageText}"
+      setIsTyping(false)
 
-Based on your legal document, I can provide specific insights about this topic. However, I need a moment to analyze the relevant sections of your document.
-
-Could you please rephrase your question or be more specific about which aspect you'd like me to focus on? For example:
-• Are you looking for risks or benefits?
-• Do you need clarification on specific terms?
-• Are you concerned about compliance requirements?
-
-This will help me provide a more targeted and useful response.`,
-        references: ["General Document Analysis"]
+      if (chatResult.success && chatResult.data) {
+        const aiMessage: Message = {
+          id: Date.now() + 1,
+          content: chatResult.data.response,
+          isUser: false,
+          timestamp: new Date(),
+          references: chatResult.data.sources || []
+        }
+        setMessages(prev => [...prev, aiMessage])
+      } else {
+        // Fallback error message
+        const errorMessage: Message = {
+          id: Date.now() + 1,
+          content: `I apologize, but I encountered an error processing your question: "${messageText}". ${chatResult.error || 'Please try rephrasing your question or try again later.'}`,
+          isUser: false,
+          timestamp: new Date(),
+          references: []
+        }
+        setMessages(prev => [...prev, errorMessage])
       }
-
-      const aiMessage: Message = {
+    } catch (error) {
+      setIsTyping(false)
+      const errorMessage: Message = {
         id: Date.now() + 1,
-        content: aiResponse.content,
+        content: `I'm sorry, I'm having trouble connecting to analyze your document right now. Please check your connection and try again.`,
         isUser: false,
         timestamp: new Date(),
-        references: aiResponse.references
+        references: []
       }
+      setMessages(prev => [...prev, errorMessage])
+    }
 
-      setMessages(prev => [...prev, aiMessage])
-      setIsLoading(false)
-    }, 2000)
+    setIsLoading(false)
   }
 
   const handleQuestionClick = (questionText: string) => {
@@ -251,7 +281,7 @@ Feel free to ask me anything about your document, or choose from the suggested q
   return (
     <main className="min-h-[100dvh] text-white">
       <SiteHeader />
-      <WorkflowProgress currentStep={3} />
+      <WorkflowProgress currentStep={4} />
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">

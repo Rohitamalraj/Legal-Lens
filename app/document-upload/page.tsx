@@ -2,18 +2,47 @@
 
 import type { Metadata } from "next";
 import { useState, useCallback } from 'react'
+import dynamic from "next/dynamic";
 import { SiteHeader } from "@/components/site-header";
-import { Footer } from "@/components/footer";
-import { FileUploadZone } from '@/components/file-upload-zone'
-import { SupportedFormats } from '@/components/supported-formats'
-import { DocumentPreview } from '@/components/document-preview'
-import { UploadError } from '@/components/upload-error'
-import { WorkflowProgress } from '@/components/workflow-progress'
 import { useRouter } from 'next/navigation'
+import { apiService } from '@/lib/api'
+
+// Lazy load components
+const Footer = dynamic(() => import("@/components/footer").then(mod => ({ default: mod.Footer })), {
+  loading: () => <div className="h-32 bg-gray-100 animate-pulse"></div>
+});
+
+const FileUploadZone = dynamic(() => import('@/components/file-upload-zone').then(mod => ({ default: mod.FileUploadZone })), {
+  loading: () => <div className="h-64 border-2 border-dashed border-gray-300 rounded-lg animate-pulse flex items-center justify-center">Loading upload zone...</div>
+});
+
+const SupportedFormats = dynamic(() => import('@/components/supported-formats').then(mod => ({ default: mod.SupportedFormats })), {
+  loading: () => <div className="h-32 animate-pulse bg-gray-100 rounded-lg"></div>
+});
+
+const DocumentPreview = dynamic(() => import('@/components/document-preview').then(mod => ({ default: mod.DocumentPreview })), {
+  loading: () => <div className="h-40 animate-pulse bg-gray-100 rounded-lg"></div>
+});
+
+const UploadError = dynamic(() => import('@/components/upload-error').then(mod => ({ default: mod.UploadError })), {
+  loading: () => <div className="h-20 animate-pulse bg-red-100 rounded-lg"></div>
+});
+
+const WorkflowProgress = dynamic(() => import('@/components/workflow-progress').then(mod => ({ default: mod.WorkflowProgress })), {
+  loading: () => <div className="h-16 animate-pulse bg-blue-100 rounded-lg"></div>
+});
 
 interface UploadedFile {
   file: File
-  extractedText: string
+  documentData: {
+    id: string
+    filename: string
+    documentType: string
+    isLegalDocument: boolean
+    confidence: number
+    analysis: any
+    uploadTime: string
+  }
 }
 
 interface UploadError {
@@ -118,7 +147,7 @@ Sample extracted content would continue here with the full text of your document
     setUploadProgress(0)
 
     try {
-      // Simulate upload progress
+      // Start upload progress simulation
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 90) {
@@ -127,27 +156,38 @@ Sample extracted content would continue here with the full text of your document
           }
           return prev + 10
         })
-      }, 200)
+      }, 300)
 
-      // Extract text from file
-      const extractedText = await extractTextFromFile(file)
+      // Upload document using real API
+      const uploadResult = await apiService.uploadDocument(file)
       
+      // Clear progress interval
+      clearInterval(progressInterval)
+      
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Upload failed')
+      }
+
       // Complete upload
       setUploadProgress(100)
+      
       setTimeout(() => {
-        setUploadedFile({ file, extractedText })
+        setUploadedFile({ 
+          file, 
+          documentData: uploadResult.data! 
+        })
         setIsUploading(false)
         setUploadProgress(0)
       }, 500)
 
-    } catch (err) {
-      setError({
-        type: 'processing',
-        message: 'Failed to process document',
-        details: 'There was an error extracting text from your document. Please try again.'
-      })
+    } catch (error) {
       setIsUploading(false)
       setUploadProgress(0)
+      setError({
+        type: 'upload',
+        message: 'Upload failed',
+        details: error instanceof Error ? error.message : 'Unknown error occurred'
+      })
     }
   }, [])
 
@@ -156,9 +196,15 @@ Sample extracted content would continue here with the full text of your document
     if (uploadedFile) {
       // Store the uploaded file data in sessionStorage for the summary page
       sessionStorage.setItem('uploadedDocument', JSON.stringify({
+        id: uploadedFile.documentData.id,
         fileName: uploadedFile.file.name,
         fileSize: uploadedFile.file.size,
-        extractedText: uploadedFile.extractedText
+        documentType: uploadedFile.documentData.documentType,
+        isLegalDocument: uploadedFile.documentData.isLegalDocument,
+        confidence: uploadedFile.documentData.confidence,
+        extractedText: (uploadedFile.documentData as any).extractedText || '', // Safe access to extracted text
+        analysis: uploadedFile.documentData.analysis,
+        uploadTime: uploadedFile.documentData.uploadTime
       }))
       
       // Navigate to document summary page
@@ -219,7 +265,7 @@ Sample extracted content would continue here with the full text of your document
             {uploadedFile && (
               <DocumentPreview
                 file={uploadedFile.file}
-                extractedText={uploadedFile.extractedText}
+                extractedText={uploadedFile.documentData.analysis.summary || 'Document analysis completed successfully.'}
                 onContinue={handleContinue}
                 onRemove={handleRemoveFile}
               />

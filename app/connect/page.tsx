@@ -1,14 +1,19 @@
+"use client"
+
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { SiteHeader } from "@/components/site-header";
-import { Footer } from "@/components/footer";
-import { Button } from "@/components/ui/button";
 import { Users, Shield, Clock, MessageSquare, Video, Phone, Star, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
-export const metadata: Metadata = {
-  title: "Connect with Legal Experts - Legal Lens | Human Legal Consultation",
-  description: "Connect with qualified lawyers for personalized legal advice. Get human expertise when AI analysis isn't enough for your complex legal documents.",
-};
+// Lazy load components
+const Footer = dynamic(() => import("@/components/footer").then(mod => ({ default: mod.Footer })), {
+  loading: () => <div className="h-32 bg-gray-100 animate-pulse"></div>
+});
+
+const Button = dynamic(() => import("@/components/ui/button").then(mod => ({ default: mod.Button })), {
+  loading: () => <div className="h-10 w-24 animate-pulse bg-blue-100 rounded"></div>
+});
 
 export default function ConnectPage() {
   const lawyers = [
