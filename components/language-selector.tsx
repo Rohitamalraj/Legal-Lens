@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-// import { Badge } from '@/components/ui/badge';
 import { Badge } from './ui/badge'; // Adjust the path as needed based on your project structure
 import { Loader2, Globe, Check } from 'lucide-react';
 import { SUPPORTED_LANGUAGES, SupportedLanguageCode } from '@/lib/constants/translation';

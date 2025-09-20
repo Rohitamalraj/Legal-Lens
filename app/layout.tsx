@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   title: "Legal Lens - AI-Powered Legal Document Analysis",
   description:
     "Transform complex legal documents into clear, actionable insights with our AI-powered analysis platform.",
-  generator: "v0.app",
 }
 
 export default function RootLayout({
