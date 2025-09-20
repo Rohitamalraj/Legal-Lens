@@ -46,7 +46,7 @@ export function MessageInput({ onSendMessage, isLoading = false, disabled = fals
         <div className="flex-1">
           <textarea
             ref={inputRef}
-            placeholder="Ask about your document..."
+            placeholder="Ask AI..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
