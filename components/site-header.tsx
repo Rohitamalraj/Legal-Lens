@@ -19,9 +19,13 @@ export function SiteHeader() {
         <div className="flex h-14 items-center justify-between px-6 liquid-glass-header rounded-full">
           {/* Brand Logo */}
           <Link href="/about" className="flex items-center gap-1.5">
-            <div className="flex items-center justify-center w-5 h-5 bg-purple-600 rounded-md">
-              <Scale className="w-3 h-3 text-white" />
-            </div>
+            <Image
+              src="/icons/legal-lens-logo.png"
+              alt="Legal Lens Logo"
+              width={20}
+              height={20}
+              className="w-5 h-5 object-contain rounded-full"
+            />
             <span className="font-semibold tracking-wide text-white">Legal Lens</span>
           </Link>
 
@@ -69,9 +73,13 @@ export function SiteHeader() {
               >
                 {/* Brand Header */}
                 <div className="flex items-center gap-1.5 px-4 py-4 border-b border-gray-800">
-                  <div className="flex items-center justify-center w-6 h-6 bg-purple-600 rounded-md">
-                    <Scale className="w-4 h-4 text-white" />
-                  </div>
+                  <Image
+                    src="/icons/legal-lens-logo.png"
+                    alt="Legal Lens Logo"
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 object-contain rounded-full"
+                  />
                   <span className="font-semibold tracking-wide text-white text-lg">Legal Lens</span>
                 </div>
 

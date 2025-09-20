@@ -4,42 +4,76 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
 import { Users, Shield, Clock, MessageSquare, Video, Phone, Star, CheckCircle } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 
 export default function ConnectPage() {
   const lawyers = [
     {
-      name: "Sarah Martinez",
+      name: "Adv. Priya Sharma",
       specialty: "Contract Law",
       experience: "12 years",
       rating: 4.9,
       reviews: 156,
-      hourlyRate: "$250",
+      hourlyRate: "₹2,500",
       image: "/placeholder-user.jpg",
-      languages: ["English", "Spanish"],
+      languages: ["English", "Hindi"],
       availability: "Available now"
     },
     {
-      name: "David Chen",
+      name: "Adv. Rajesh Kumar",
       specialty: "Corporate Law",
       experience: "8 years", 
       rating: 4.8,
       reviews: 89,
-      hourlyRate: "$200",
+      hourlyRate: "₹2,000",
       image: "/placeholder-user.jpg",
-      languages: ["English", "Mandarin"],
+      languages: ["English", "Hindi", "Telugu"],
       availability: "Available in 2 hours"
     },
     {
-      name: "Emily Rodriguez",
+      name: "Adv. Meera Patel",
       specialty: "Employment Law",
       experience: "15 years",
       rating: 5.0,
       reviews: 203,
-      hourlyRate: "$300",
+      hourlyRate: "₹3,000",
       image: "/placeholder-user.jpg",
-      languages: ["English", "French"],
+      languages: ["English", "Hindi", "Gujarati"],
+      availability: "Available tomorrow"
+    },
+    {
+      name: "Adv. Arjun Singh",
+      specialty: "Property Law",
+      experience: "10 years",
+      rating: 4.7,
+      reviews: 124,
+      hourlyRate: "₹2,200",
+      image: "/placeholder-user.jpg",
+      languages: ["English", "Hindi", "Punjabi"],
+      availability: "Available now"
+    },
+    {
+      name: "Adv. Kavya Reddy",
+      specialty: "Family Law",
+      experience: "9 years",
+      rating: 4.8,
+      reviews: 167,
+      hourlyRate: "₹1,800",
+      image: "/placeholder-user.jpg",
+      languages: ["English", "Hindi", "Tamil"],
+      availability: "Available in 1 hour"
+    },
+    {
+      name: "Adv. Vikram Gupta",
+      specialty: "Criminal Law",
+      experience: "18 years",
+      rating: 4.9,
+      reviews: 289,
+      hourlyRate: "₹3,500",
+      image: "/placeholder-user.jpg",
+      languages: ["English", "Hindi"],
       availability: "Available tomorrow"
     }
   ];
@@ -122,7 +156,15 @@ export default function ConnectPage() {
               {lawyers.map((lawyer, index) => (
                 <div key={index} className="liquid-glass rounded-lg p-6">
                   <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 bg-gray-600 rounded-full mr-3"></div>
+                    <div className="w-12 h-12 rounded-full mr-3 overflow-hidden bg-gray-600">
+                      <Image 
+                        src={lawyer.image} 
+                        alt={lawyer.name}
+                        width={48}
+                        height={48}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                     <div>
                       <h3 className="font-semibold text-white">{lawyer.name}</h3>
                       <p className="text-sm text-purple-300">{lawyer.specialty}</p>

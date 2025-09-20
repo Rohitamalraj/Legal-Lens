@@ -12,6 +12,13 @@ export const metadata: Metadata = {
   title: "Legal Lens - AI-Powered Legal Document Analysis",
   description:
     "Transform complex legal documents into clear, actionable insights with our AI-powered analysis platform.",
+  icons: {
+    icon: [
+      { url: '/icons/legal-lens-logo.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '32x32' }
+    ],
+    apple: '/icons/legal-lens-logo.svg',
+  },
 }
 
 export default function RootLayout({
@@ -36,8 +43,7 @@ export default function RootLayout({
         <Script id="dynamic-favicon" strategy="beforeInteractive">
           {`
             function updateFavicon() {
-              const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-              const faviconHref = darkMode ? '/icons/skitbit-white.svg' : '/icons/favicon-dark.svg';
+              const faviconHref = '/icons/legal-lens-logo.svg';
               let link = document.querySelector("link[rel~='icon']");
               if (!link) {
                 link = document.createElement('link');
@@ -47,8 +53,6 @@ export default function RootLayout({
               link.href = faviconHref;
             }
             updateFavicon();
-            // Listen for changes in theme
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateFavicon);
           `}
         </Script>
 

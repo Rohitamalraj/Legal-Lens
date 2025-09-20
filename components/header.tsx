@@ -10,16 +10,15 @@ export function Header() {
       style={{ borderColor: "rgba(30,58,138,0.08)" }}
     >
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2" aria-label="LegalEase home">
-          <div
-            className="h-8 w-8 rounded-md"
-            style={{
-              background: "linear-gradient(135deg, var(--color-brand) 0%, var(--color-electric) 100%)",
-            }}
+        <Link href="/" className="flex items-center gap-2" aria-label="Legal-Lens home">
+          <img
+            src="/icons/legal-lens-logo.svg"
+            alt="Legal-Lens Logo"
+            className="h-8 w-8"
             aria-hidden="true"
           />
           <span className="font-sans text-lg font-semibold tracking-tight" style={{ color: "var(--color-brand)" }}>
-            LegalEase
+            Legal-Lens
           </span>
         </Link>
         <div className="flex items-center gap-2">
