@@ -65,7 +65,7 @@ export default function IntegratedAnalysePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Legal Document Analysis
@@ -77,8 +77,8 @@ export default function IntegratedAnalysePage() {
 
         {!currentDocument ? (
           // Upload Section
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
                 Upload Your Legal Document
               </h2>
@@ -89,8 +89,8 @@ export default function IntegratedAnalysePage() {
           // Analysis Dashboard
           <div className="space-y-8">
             {/* Header with Document Info */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="flex justify-between items-center">
+            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h2 className="text-2xl font-semibold text-gray-800">
                     {currentDocument.filename}
@@ -112,7 +112,7 @@ export default function IntegratedAnalysePage() {
             {/* Analytics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Risk Score */}
-              <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                 <RiskRadar percent={currentDocument.analysis.riskScore} />
               </div>
 

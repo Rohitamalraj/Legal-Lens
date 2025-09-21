@@ -52,8 +52,8 @@ export function DocumentSummaryCard({ summary, document }: DocumentSummaryCardPr
   }
 
   return (
-    <div className="liquid-glass border border-white/10 bg-white/5 backdrop-blur-xl rounded-lg shadow-xl p-6">
-      <div className="flex items-start justify-between mb-6">
+    <div className="liquid-glass border border-white/10 bg-white/5 backdrop-blur-xl rounded-lg shadow-xl p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4 sm:mb-6">
         <div className="flex items-center space-x-3">
           <div className="flex items-center justify-center w-12 h-12 bg-purple-500/10 rounded-lg">
             <FileText className="w-6 h-6 text-purple-400" />
@@ -63,9 +63,9 @@ export function DocumentSummaryCard({ summary, document }: DocumentSummaryCardPr
             <p className="text-sm text-gray-400">AI-generated analysis</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2 text-sm text-gray-400">
+        <div className="flex items-center space-x-2 text-sm text-gray-400 sm:flex-shrink-0">
           <Clock className="w-4 h-4" />
-          <span>Processed in {formatProcessingTime(summary.processingTime)}</span>
+          <span className="whitespace-nowrap">Processed in {formatProcessingTime(summary.processingTime)}</span>
         </div>
       </div>
 
@@ -79,9 +79,9 @@ export function DocumentSummaryCard({ summary, document }: DocumentSummaryCardPr
         {/* Key Information */}
         <div>
           <h3 className="text-lg font-medium text-white mb-3">Key Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {summary.keyInformation.map((info, index) => (
-              <div key={index} className="flex items-start space-x-3 p-3 bg-white/5 rounded-lg border border-white/10">
+              <div key={index} className="flex items-start space-x-2 sm:space-x-3 p-2 sm:p-3 bg-white/5 rounded-lg border border-white/10">
                 <Info className="w-4 h-4 text-purple-400 mt-0.5" />
                 <div>
                   <h4 className="font-medium text-white text-sm">{info.label}</h4>
@@ -94,20 +94,20 @@ export function DocumentSummaryCard({ summary, document }: DocumentSummaryCardPr
 
         {/* Document Metadata */}
         <div className="pt-4 border-t border-white/10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="flex items-center space-x-2">
-              <File className="w-4 h-4 text-gray-400" />
-              <span className="text-gray-400">File:</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+            <div className="flex items-center space-x-2 min-w-0">
+              <File className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <span className="text-gray-400 flex-shrink-0">File:</span>
               <span className="font-medium text-white truncate">{document.name}</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-gray-400" />
-              <span className="text-gray-400">Uploaded:</span>
-              <span className="font-medium text-white">{formatDate(document.uploadDate)}</span>
+            <div className="flex items-center space-x-2 min-w-0">
+              <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <span className="text-gray-400 flex-shrink-0">Uploaded:</span>
+              <span className="font-medium text-white truncate">{formatDate(document.uploadDate)}</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <HardDrive className="w-4 h-4 text-gray-400" />
-              <span className="text-gray-400">Size:</span>
+            <div className="flex items-center space-x-2 min-w-0">
+              <HardDrive className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <span className="text-gray-400 flex-shrink-0">Size:</span>
               <span className="font-medium text-white">{formatFileSize(document.size)}</span>
             </div>
           </div>

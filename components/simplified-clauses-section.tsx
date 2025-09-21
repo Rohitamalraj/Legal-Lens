@@ -49,8 +49,8 @@ export function SimplifiedClausesSection({ clauses }: SimplifiedClausesSectionPr
   }
 
   return (
-    <div className="liquid-glass border border-white/10 bg-white/5 backdrop-blur-xl rounded-lg shadow-xl p-6">
-      <div className="flex items-center space-x-3 mb-6">
+    <div className="liquid-glass border border-white/10 bg-white/5 backdrop-blur-xl rounded-lg shadow-xl p-4 sm:p-6">
+      <div className="flex items-center space-x-3 mb-4 sm:mb-6">
         <div className="flex items-center justify-center w-10 h-10 bg-green-500/10 rounded-lg">
           <FileText className="w-5 h-5 text-green-400" />
         </div>
@@ -69,7 +69,7 @@ export function SimplifiedClausesSection({ clauses }: SimplifiedClausesSectionPr
             <div key={clause.id} className="border border-white/10 rounded-lg overflow-hidden">
               <button
                 onClick={() => toggleClause(clause.id)}
-                className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 transition-all duration-200 text-left"
+                className="w-full flex items-center justify-between p-3 sm:p-4 bg-white/5 hover:bg-white/10 transition-all duration-200 text-left"
               >
                 <div className="flex items-center space-x-3">
                   <IconComponent className="w-5 h-5 text-purple-400" />
@@ -86,12 +86,12 @@ export function SimplifiedClausesSection({ clauses }: SimplifiedClausesSectionPr
               </button>
 
               {isExpanded && (
-                <div className="p-4 border-t border-white/10 bg-white/5">
-                  <div className="space-y-4">
+                <div className="p-3 sm:p-4 border-t border-white/10 bg-white/5">
+                  <div className="space-y-3 sm:space-y-4">
                     {/* Original Text */}
                     <div>
                       <h4 className="text-sm font-medium text-gray-400 mb-2">Original Text:</h4>
-                      <p className="text-sm text-gray-300 bg-gray-800/50 p-3 rounded-md italic border border-white/10">
+                      <p className="text-sm text-gray-300 bg-gray-800/50 p-2 sm:p-3 rounded-md italic border border-white/10">
                         "{clause.originalText}"
                       </p>
                     </div>
@@ -111,7 +111,7 @@ export function SimplifiedClausesSection({ clauses }: SimplifiedClausesSectionPr
 
                     {/* Key Takeaway */}
                     {clause.keyTakeaway && (
-                      <div className="bg-purple-500/10 border border-purple-500/20 rounded-md p-3">
+                      <div className="bg-purple-500/10 border border-purple-500/20 rounded-md p-2 sm:p-3">
                         <div className="flex items-start space-x-2">
                           <Lightbulb className="w-4 h-4 text-purple-400 mt-0.5" />
                           <div>

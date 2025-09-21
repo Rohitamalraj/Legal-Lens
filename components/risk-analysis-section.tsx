@@ -77,8 +77,8 @@ export function RiskAnalysisSection({ risks }: RiskAnalysisSectionProps) {
   }
 
   return (
-    <div className="liquid-glass border border-white/10 bg-white/5 backdrop-blur-xl rounded-lg shadow-xl p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="liquid-glass border border-white/10 bg-white/5 backdrop-blur-xl rounded-lg shadow-xl p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
         <div className="flex items-center space-x-3">
           <div className="flex items-center justify-center w-10 h-10 bg-yellow-500/10 rounded-lg">
             <Shield className="w-5 h-5 text-yellow-400" />
@@ -105,8 +105,8 @@ export function RiskAnalysisSection({ risks }: RiskAnalysisSectionProps) {
       </div>
 
       {/* Risk Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-3 sm:p-4">
           <div className="flex items-center space-x-2">
             <AlertTriangle className="w-5 h-5 text-red-400" />
             <span className="font-medium text-red-400">High Risk</span>
@@ -115,7 +115,7 @@ export function RiskAnalysisSection({ risks }: RiskAnalysisSectionProps) {
           <p className="text-xs text-gray-400">Requires attention</p>
         </div>
 
-        <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4">
+        <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-3 sm:p-4">
           <div className="flex items-center space-x-2">
             <AlertCircle className="w-5 h-5 text-yellow-400" />
             <span className="font-medium text-yellow-400">Medium Risk</span>
@@ -124,7 +124,7 @@ export function RiskAnalysisSection({ risks }: RiskAnalysisSectionProps) {
           <p className="text-xs text-gray-400">Review recommended</p>
         </div>
 
-        <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-4">
+        <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-3 sm:p-4">
           <div className="flex items-center space-x-2">
             <CheckCircle className="w-5 h-5 text-green-400" />
             <span className="font-medium text-green-400">Favorable</span>
@@ -143,7 +143,7 @@ export function RiskAnalysisSection({ risks }: RiskAnalysisSectionProps) {
           return (
             <div 
               key={risk.id} 
-              className={`border rounded-lg p-4 ${riskStyle.bg} ${riskStyle.border}`}
+              className={`border rounded-lg p-3 sm:p-4 ${riskStyle.bg} ${riskStyle.border}`}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center space-x-3">
@@ -163,7 +163,7 @@ export function RiskAnalysisSection({ risks }: RiskAnalysisSectionProps) {
               <p className="text-sm text-gray-300 mb-3">{risk.description}</p>
 
               {risk.recommendation && (
-                <div className="bg-white/5 border border-white/10 rounded-md p-3">
+                <div className="bg-white/5 border border-white/10 rounded-md p-2 sm:p-3">
                   <div className="flex items-start space-x-2">
                     <Lightbulb className="w-4 h-4 text-purple-400 mt-0.5" />
                     <div>

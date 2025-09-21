@@ -582,25 +582,25 @@ export default function DocumentSummaryPage() {
     <main className="min-h-[100dvh] text-white">
       <SiteHeader />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-8">
+        <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Document Analysis Results
             </h1>
-            <p className="text-gray-300 text-lg max-w-2xl mx-auto">
+            <p className="text-gray-300 text-lg max-w-3xl mx-auto">
               Your legal document has been analyzed. Review the summary, explore clauses, 
               and understand potential risks to make informed decisions.
             </p>
           </div>
 
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="max-w-6xl mx-auto space-y-6">
             {/* Workflow Progress */}
             <WorkflowProgress currentStep={3} />
 
             {/* Translation and Audio Controls */}
-            <div className="border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-xl p-6">
+            <div className="border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-xl p-4 sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex flex-wrap items-center gap-4">
                   {/* Translation Button */}
@@ -623,7 +623,7 @@ export default function DocumentSummaryPage() {
             </div>
 
             {/* Document Analysis Card */}
-            <div className="border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-8">
+            <div className="border-2 border-gray-700/30 bg-gray-900/40 backdrop-blur-md rounded-2xl p-4 sm:p-6 lg:p-8">
               {/* Navigation Tabs */}
               <SummaryNavigationTabs 
                 activeTab={activeTab} 
@@ -631,7 +631,7 @@ export default function DocumentSummaryPage() {
               />
 
               {/* Tab Content */}
-              <div className="mt-6">
+              <div className="mt-4 sm:mt-6">
                 {renderTabContent()}
               </div>
             </div>

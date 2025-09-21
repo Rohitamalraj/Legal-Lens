@@ -48,19 +48,22 @@ export function DocumentUploadSuccess({ file, onContinue, onUploadAnother }: Doc
       </div>
 
       {/* File Details */}
-      <div className="p-6">
-        <div className="flex items-center space-x-4 p-4 bg-white/5 rounded-lg border border-white/10">
-          <div className="flex items-center justify-center w-12 h-12 bg-blue-500/10 rounded-lg">
-            <FileIcon className="w-6 h-6 text-blue-400" />
+      <div className="p-4 sm:p-6">
+        <div className="flex items-start space-x-3 sm:space-x-4 p-3 sm:p-4 bg-white/5 rounded-lg border border-white/10">
+          <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-blue-500/10 rounded-lg flex-shrink-0">
+            <FileIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-white truncate">{file.name}</h3>
-            <div className="flex items-center space-x-4 text-sm text-gray-400 mt-1">
+            <h3 className="font-semibold text-white text-sm sm:text-base truncate">{file.name}</h3>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-gray-400 mt-1">
               <span>{formatFileSize(file.size)}</span>
-              <span>•</span>
-              <span>{file.type.includes('pdf') ? 'PDF Document' : 'Word Document'}</span>
-              <span>•</span>
-              <span className="text-green-400">✓ Ready</span>
+              <span className="hidden sm:inline">•</span>
+              <span className="truncate">{file.type.includes('pdf') ? 'PDF Document' : 'Word Document'}</span>
+              <span className="hidden sm:inline">•</span>
+              <span className="text-green-400 flex items-center gap-1 flex-shrink-0">
+                <CheckCircle className="w-3 h-3" />
+                <span>Ready</span>
+              </span>
             </div>
           </div>
         </div>

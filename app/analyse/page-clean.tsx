@@ -171,8 +171,8 @@ export default function AnalysePage() {
         )}
       </header>
 
-      <main className="container mx-auto px-4 pt-16 pb-16 relative z-10">
-        <div className="max-w-4xl mx-auto">
+      <main className="container mx-auto px-3 sm:px-4 lg:px-6 pt-16 pb-16 relative z-10">
+        <div className="max-w-7xl mx-auto">
           {/* Page Title */}
           <motion.div 
             className="text-center mb-12"

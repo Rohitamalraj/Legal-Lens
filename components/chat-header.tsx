@@ -85,15 +85,24 @@ export function ChatHeader({ document, onClearChat, messageCount = 0 }: ChatHead
       </div>
 
       {/* Mobile actions */}
-      <div className="sm:hidden mt-3 flex space-x-2">
+      <div className="sm:hidden mt-3 flex flex-col space-y-2">
         <Button
           variant="outline"
           size="sm"
           onClick={onClearChat}
-          className="flex-1 bg-white/5 border-white/20 text-white hover:bg-white/10"
+          className="bg-white/5 border-white/20 text-white hover:bg-white/10"
         >
           <Trash2 className="w-4 h-4 mr-2" />
           Clear Chat
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleBackToSummary}
+          className="bg-white/5 border-white/20 text-white hover:bg-white/10"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Summary
         </Button>
       </div>
     </div>
