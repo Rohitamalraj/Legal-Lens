@@ -62,11 +62,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Text is required' }, { status: 400 })
     }
 
-    // Validate text length (Google TTS has limits)
-    if (text.length > 5000) {
-      return NextResponse.json({ 
-        error: 'Text too long. Maximum 5000 characters allowed.' 
-      }, { status: 400 })
+    // Function to split text into chunks under byte limit while preserving word boundaries
+    const chunkText = (text: string, maxBytes: number = 4500): string[] => {
+      const chunks: string[] = []
+      let currentChunk = ''
+      const words = text.split(/(\s+|[।॥।|.!?])/g) // Split on whitespace and sentence endings
+      
+      for (const word of words) {
+        const testChunk = currentChunk + word
+        // Check byte length (UTF-8 encoding)
+        const byteLength = Buffer.byteLength(testChunk, 'utf8')
+        
+        if (byteLength <= maxBytes) {
+          currentChunk = testChunk
+        } else {
+          if (currentChunk.trim()) {
+            chunks.push(currentChunk.trim())
+          }
+          currentChunk = word
+        }
+      }
+      
+      if (currentChunk.trim()) {
+        chunks.push(currentChunk.trim())
+      }
+      
+      return chunks.filter(chunk => chunk.length > 0)
     }
 
     // Language voice mapping for better voice selection
@@ -123,37 +144,52 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Construct the request with optimized settings for speed
-    const request_config = {
-      input: { text },
-      voice: {
-        languageCode: languageCode,
-        ...selectedVoice
-      },
-      audioConfig: {
-        audioEncoding: 'MP3' as const,
-        speakingRate: 1.1, // Slightly faster for quicker delivery
-        pitch: 0.0,
-        effectsProfileId: ['headphone-class-device'], // Optimized for digital playback
-        volumeGainDb: 2.0, // Slightly louder for clarity
-      },
-    }
-
     console.log('TTS Request:', {
       text: text.substring(0, 100) + '...',
       languageCode,
       voice: selectedVoice
     })
 
-    // Perform the text-to-speech request
-    const [response] = await client.synthesizeSpeech(request_config)
+    // Split text into chunks if it exceeds the byte limit
+    const textChunks = chunkText(text)
+    console.log(`TTS: Processing ${textChunks.length} chunk(s)`)
+    
+    const audioChunks: Buffer[] = []
 
-    if (!response.audioContent) {
-      throw new Error('No audio content received from Google TTS')
+    // Process each chunk
+    for (let i = 0; i < textChunks.length; i++) {
+      const chunk = textChunks[i]
+      console.log(`TTS: Processing chunk ${i + 1}/${textChunks.length} (${Buffer.byteLength(chunk, 'utf8')} bytes)`)
+      
+      // Construct the request for this chunk
+      const chunkRequest = {
+        input: { text: chunk },
+        voice: {
+          languageCode: languageCode,
+          ...selectedVoice
+        },
+        audioConfig: {
+          audioEncoding: 'MP3' as const,
+          speakingRate: 1.1, // Slightly faster for quicker delivery
+          pitch: 0.0,
+          effectsProfileId: ['headphone-class-device'], // Optimized for digital playback
+          volumeGainDb: 2.0, // Slightly louder for clarity
+        },
+      }
+
+      // Perform the text-to-speech request for this chunk
+      const [chunkResponse] = await client.synthesizeSpeech(chunkRequest)
+
+      if (!chunkResponse.audioContent) {
+        throw new Error(`No audio content received for chunk ${i + 1}`)
+      }
+
+      audioChunks.push(Buffer.from(chunkResponse.audioContent as Uint8Array))
     }
 
-    // Return the audio as base64
-    const audioBase64 = Buffer.from(response.audioContent as Uint8Array).toString('base64')
+    // Combine all audio chunks
+    const combinedAudio = Buffer.concat(audioChunks)
+    const audioBase64 = combinedAudio.toString('base64')
     
     return NextResponse.json({ 
       audioContent: audioBase64,
